@@ -65,12 +65,12 @@ for (const mode of ['estimate','previous','manual']) {
  const old=input({residentMode:'manual',residentAnnual:240500,monthlyResidentMode:mode,residentMonthly:12345});
  const before=U.calculate(old);delete old.residentCollectionMode;
  const migrated=U.validateDocument({...doc,version:2,input:old});
- eq(migrated.version,3,'v2 upgrades to v3');eq(migrated.input.monthlyResidentMode,mode,'migration does not silently link');
+ eq(migrated.version,4,'v2 upgrades to v4');eq(migrated.input.monthlyResidentMode,mode,'migration does not silently link');
  eq(U.calculate(migrated.input),before,'legacy saved result preserved');
  eq(migrated.residentLegacy,true,'legacy independence message');
 }
 const invalidNew={...linked};delete invalidNew.residentCollectionMode;
 assert.throws(()=>U.validateDocument({...doc,input:invalidNew}));checks++;
 assert.throws(()=>U.validateDocument({...doc,version:2}));checks++;
-eq(U.validateDocument(require('./example-bonus.json')).version,3,'real v2 example migrates');
+eq(U.validateDocument(require('./example-bonus.json')).version,4,'real v2 example migrates');
 console.log(`PASS ${checks} resident notice checks`);

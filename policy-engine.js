@@ -105,13 +105,14 @@
     });
     return {tax:Math.floor(numerator / 10000), portions, marginalBp};
   }
-  function incomeTax(income, social, p) {
+  function incomeTax(income, social, p, dependentDeduction=0) {
+    int(dependentDeduction,0,6300000,'扶養控除（円）');
     const basic = basicDeduction(income, p);
-    const taxable = Math.max(0, Math.floor((income - social - basic) / 1000) * 1000);
+    const taxable = Math.max(0, Math.floor((income - social - basic - dependentDeduction) / 1000) * 1000);
     const pTax = progressive(taxable, p.brackets);
     const reconstruction = Math.floor(pTax.tax * 21 / 1000);
     const annual = Math.floor((pTax.tax + reconstruction) / 100) * 100;
-    return {...pTax, basic, taxable, reconstruction, annual};
+    return {...pTax, basic, taxable, reconstruction, annual, dependentDeduction};
   }
   // FY2027 assessment of 2026 earnings, no dependents/other deductions/credits.
   // Tokyo 23 wards: 6% + 4%, per-capita 4,000 + forest tax 1,000 yen.

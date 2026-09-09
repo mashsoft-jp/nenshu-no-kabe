@@ -2,7 +2,7 @@
 <div class="sim-shell" id="simRoot">
   <div class="sim-hero">
     <div><h1 id="policyTitle">手取り計算</h1><p class="sim-lead">月給・賞与から、通常月と年間の手取り額を計算します。</p>
-    <div class="sim-meta"><span class="badge">制度確認 2026.09.09</span><span class="badge">協会けんぽ</span><span class="badge amber">条件付きの概算</span><span class="badge">20〜64歳・扶養なし</span></div></div>
+    <div class="sim-meta"><span class="badge">制度確認 2026.09.09</span><span class="badge">協会けんぽ</span><span class="badge amber">条件付きの概算</span><span class="badge">20〜64歳・扶養条件入力可</span></div></div>
     <div class="sim-actions"><button id="simSave" type="button">設定を保存</button><button id="simLoad" type="button">設定を読み込む</button><input id="simFile" type="file" accept=".json,application/json" hidden></div>
   </div>
   <div id="simError" class="sim-error" role="alert" hidden></div>
@@ -21,8 +21,23 @@
           <div class="sim-field prior-bonus" id="priorBonusWrap" hidden><label for="priorBonusStandard">前年4〜12月の標準賞与累計額（健康保険・円）</label><input id="priorBonusStandard" type="number" min="0" max="5730000" step="1000" value="0" inputmode="numeric"><p class="sim-hint">1〜3月支給分の上限判定に使用。初期値は0円です。当年の額面年収には加算しません。</p></div></div>
           <div class="gross-total-box"><span>額面年収</span><output id="derivedAnnualGross" for="monthlyGross">—</output><p id="grossFormula">月給 × 12 ＋ 賞与合計</p><p id="nonTaxAnnualHint" hidden></p></div>
           <div class="sim-fields-two"><div class="sim-field"><label for="simPrefecture">協会けんぽの加入支部</label><select id="simPrefecture"></select></div><div class="sim-field"><label for="simAge">年齢</label><input id="simAge" type="number" min="20" max="64" step="1" value="30" inputmode="numeric"></div></div>
+          <details class="sim-conditions" id="dependentConditions"><summary>扶養条件 <span id="dependentSummary">なし</span></summary><div class="sim-inner">
+            <p class="sim-hint">あなたが税法上扶養する、国内居住の配偶者以外の親族を入力してください。健康保険の扶養人数とは異なります。他の人が扶養控除を受ける親族は含めません。</p>
+            <p class="sim-hint">年間の条件は2026年12月31日時点の年齢、年間合計所得62万円以下が対象です。所得は給与の額面収入とは異なります。生計を一にし、事業専従者でないことが前提です。</p>
+            <div id="dependentFields" class="sim-fields-two dependent-fields"></div>
+            <p class="sim-hint">同居老親等は、あなた又は配偶者の父母・祖父母などで同居を常としている70歳以上の方です。他の年齢区分と重複して数えません。配偶者（特別）控除・特定親族特別控除・障害者控除・ひとり親控除は対象外です。</p>
+            <p class="sim-hint" id="dependentDeductionHint"></p>
+            <div class="sim-field"><label for="withholdingDependentMode">通常月の源泉徴収人数</label><select id="withholdingDependentMode"><option value="same">上の16歳以上の人数と同じと仮定</option><option value="manual">勤務先への申告人数を指定</option></select></div>
+            <div class="sim-field" id="withholdingDependentsWrap" hidden><label for="withholdingDependents">通常月の源泉徴収人数（人）</label><input id="withholdingDependents" type="number" min="0" max="10" step="1" value="0" inputmode="numeric"></div>
+            <p class="sim-hint">通常月は2026年の甲欄・電算機計算特例です。年額と人数が異なる場合（一般扶養の所得が58万円超62万円以下など）は勤務先への申告人数を指定してください。この指定は年間の扶養控除に影響しません。</p>
+            <details id="previousDependentConditions"><summary>前年の扶養条件（2026年度住民税）</summary>
+              <div class="sim-field"><label for="previousDependentMode">前年の扶養区分</label><select id="previousDependentMode"><option value="same">上と同じ人数・区分と仮定</option><option value="manual">2025年末の人数・区分を指定</option></select></div>
+              <div id="previousDependentFields" class="sim-fields-two dependent-fields" hidden></div>
+              <p class="sim-hint">2025年12月31日時点・年間合計所得58万円以下。前年と今年で年齢区分や所得が異なる場合は個別指定してください。住民税の通知書年額・直接指定月額は変更しません。</p>
+            </details>
+          </div></details>
           <details class="sim-conditions" id="advancedConditions"><summary>詳細条件</summary><div class="sim-inner">
-            <p class="sim-hint">社会保険加入済み・配偶者と扶養親族なしのモデルです。賞与以外の所得や各種所得控除は含めません。</p>
+            <p class="sim-hint">社会保険加入済みのモデルです。扶養条件は上で指定できます。賞与以外の所得や扶養以外の追加控除は含めません。</p>
             <div class="sim-field"><label for="simEmployment">雇用保険の本人負担</label><select id="simEmployment"><option value="50">一般の事業：0.5%</option><option value="60">農林水産・清酒製造・建設：0.6%</option><option value="0">加入対象外：計算しない</option></select></div>
             <div class="sim-field"><label for="nonTax">月給に含む非課税通勤手当（円）</label><input id="nonTax" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"></div>
             <div class="sim-field"><label for="standardMode">標準報酬月額</label><select id="standardMode"><option value="auto">入力した月給から等級を仮置き</option><option value="manual">決定済みの等級を指定</option></select></div>
@@ -37,9 +52,9 @@
                 <p id="residentScheduleTotal" class="sim-hint">—</p><p id="residentScheduleUse" class="sim-hint">—</p>
               </div>
             </div>
-            <div class="sim-field"><label for="monthlyResidentMode">通常月の住民税</label><select id="monthlyResidentMode"><option value="estimate">前年も同じ給与・賞与として概算</option><option value="previous">前年の給与・保険料から概算</option><option value="annual" id="residentAnnualOption" disabled>通知書の年額から算出</option><option value="manual">通知書の月額を入力・優先</option></select><p class="sim-hint" id="monthlyResidentHint">自動概算は2026年度・東京23区・前年扶養なし。</p></div>
+            <div class="sim-field"><label for="monthlyResidentMode">通常月の住民税</label><select id="monthlyResidentMode"><option value="estimate">前年も同じ給与・賞与として概算</option><option value="previous">前年の給与・保険料から概算</option><option value="annual" id="residentAnnualOption" disabled>通知書の年額から算出</option><option value="manual">通知書の月額を入力・優先</option></select><p class="sim-hint" id="monthlyResidentHint">自動概算は2026年度・東京23区・前年の扶養条件を使用。</p></div>
             <div id="previousWrap" hidden><div class="sim-field"><label for="previousSalary">2025年の給与収入（賞与込み・非課税分を除く円）</label><input id="previousSalary" type="number" min="0" max="100000000" value="6000000" step="1" inputmode="numeric"></div><div class="sim-field"><label for="previousSocial">2025年に支払った社会保険料（円）</label><input id="previousSocial" type="number" min="0" max="50000000" value="867600" step="1" inputmode="numeric"></div></div>
-            <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"><p class="sim-hint">年度途中の転職・税額変更などは通知書の月額を優先します。ここでは6月の手取りを自動算出しません。</p></div>
+            <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"><p class="sim-hint">年度途中の転職・税額変更などは通知書の月額を優先します。給与天引きがなく別払いの場合は0円を指定。年間の住民税負担とは別です。ここでは6月の手取りを自動算出しません。</p></div>
             <div class="sim-field"><label for="simSocialMode">年間手取りに使う社会保険料</label><select id="simSocialMode"><option value="auto">月給分×12＋賞与分で概算</option><option value="manual">本人負担の年額を入力・固定</option></select></div>
             <div class="sim-field" id="simSocialManualWrap" hidden><label for="simSocialAnnual">年間社会保険料（円）</label><input id="simSocialAnnual" type="number" min="0" max="50000000" step="1" value="881400" inputmode="numeric"><p class="sim-hint">年間手取りのみ上書きします。通常月は月給・等級から計算します。</p></div>
             <div class="sim-field"><label for="otherDeduction">その他の給与控除（月額・円）</label><input id="otherDeduction" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"><p class="sim-hint">年額は月額×12。所得控除には含めません。</p></div>
@@ -136,11 +151,13 @@
 <p><strong>計算モデル：</strong>所得税は成立済みの2026年分の制度（12月の年末調整から反映される改正を含む）。住民税の自動概算はこの年収に対応する2027年度の負担を年額で差し引きます。通知書年額の入力時は、その対象年度の金額に置き換えます（課税収入は月給×12＋賞与−非課税手当×12）。社会保険料は2026年9月の料率による月給分×12＋賞与分。1〜3月の賞与にも同じ9月の料率を使用する固定条件のモデルです。実際の2026年1〜12月の入出金を再現する計算ではありません。</p>
 <p><strong>通常月：</strong>2026年9月の通常給与の源泉徴収額（甲欄・扶養0人）で計算。住民税は通知書年額から月額を算出する方法、通知書月額の直接指定、2026年度の概算から選べます。年額連動時は7月〜翌5月分を通常月に使用し、住民税差だけを反映した6月の手取りも表示します。年間手取り÷12とは別の金額です。</p><p><strong>賞与：</strong>年3回までの支給月・額面を入力。標準賞与額は同月の額面を合算後、1,000円未満切捨て。厚生年金は月150万円、健康保険等は4月〜翌3月で573万円が上限。1〜3月に支給がある場合は前年4〜12月の標準賞与累計額を指定（初期0円）。当年分の額面年収には前年賞与は加算しません。支給月ごとの料率変更や異動・免除は再現しません。</p><p><strong>所得税：</strong>給与所得控除後の所得から社会保険料控除・基礎控除を控除し、課税所得の1,000円未満を切捨て。各段階の超過部分に税率を掛けて合算します。仮想制度も同じ方法で、速算表の控除額は固定流用しません。税額の1円未満切捨て後に復興特別所得税2.1%を計算し、合計の100円未満を切り捨てる概算です。</p>
 <p><strong>2026年分の基礎控除：</strong>合計所得489万円以下104万円、655万円以下67万円、2,350万円以下62万円、2,400万円以下48万円、2,450万円以下32万円、2,500万円以下16万円、それを超えると0円。現行制度は固定し、仮想制度側だけを編集できます。</p>
-<p><strong>通勤手当・その他控除：</strong>入力月給に含む非課税通勤手当は所得税・住民税の給与収入から除外し、社会保険料の報酬には含めます。その他の給与控除は月額×12を手取りから控除し、所得控除には含めません。</p><p><strong>住民税の自動概算：</strong>東京23区・本人に特別な非課税要件なし・配偶者や扶養なし・給与所得のみ。所得割6%＋4%、調整控除、均等割と森林環境税を計算。所得税の基礎控除を変えても住民税の控除額・調整控除の制度は変えません。自治体ごとの上乗せや各種控除は対象外です。</p>
+<p><strong>通勤手当・その他控除：</strong>入力月給に含む非課税通勤手当は所得税・住民税の給与収入から除外し、社会保険料の報酬には含めます。その他の給与控除は月額×12を手取りから控除し、所得控除には含めません。</p><p><strong>住民税の自動概算：</strong>東京23区・本人に特別な非課税要件なし・配偶者控除なし・扶養条件を反映・給与所得のみ。所得割6%＋4%、調整控除、均等割と森林環境税を計算。所得税の基礎控除を変えても住民税の控除額・調整控除の制度は変えません。自治体ごとの上乗せや各種控除は対象外です。</p>
 <p><strong>社会保険：</strong>協会けんぽ加入済みが前提。健康保険・介護保険・厚生年金・子ども・子育て支援金・雇用保険を計算。賞与を含めず、入力した月給から標準報酬月額の等級を仮置き（決定済み等級の指定も可）。被扶養者からの加入、被扶養者認定、国保、国民年金、65歳以上、年途中の料率・資格・年齢・給与変更は再現しません。手入力は本人の所得控除対象の負担額を指定してください。</p>
-<p><strong>今回の対象外：</strong>年4回以上の賞与、賞与支給時の源泉徴収・振込額、副業、配偶者・扶養控除、税額控除、住宅ローン、生命保険、医療費、iDeCo、ふるさと納税、世帯手取り、会社独自の扶養手当など。「106万円・130万円の壁を変える」社会保険制度シミュレーションは未実装です。税率変更による雇用・賃金・税収の行動変化も推計しません。</p>
+<p><strong>今回の対象外：</strong>年4回以上の賞与、賞与支給時の源泉徴収・振込額、副業、配偶者（特別）控除・特定親族特別控除、税額控除、住宅ローン、生命保険、医療費、iDeCo、ふるさと納税、世帯手取り、会社独自の扶養手当など。「106万円・130万円の壁を変える」社会保険制度シミュレーションは未実装です。税率変更による雇用・賃金・税収の行動変化も推計しません。</p>
 </div>
 <div>
+<a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1180.htm" rel="noopener noreferrer" target="_blank">国税庁｜扶養控除</a>
+<a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1411.htm" rel="noopener noreferrer" target="_blank">国税庁｜所得金額調整控除</a>
 <a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm" rel="noopener noreferrer" target="_blank">国税庁｜所得税の税率・超過累進課税</a>
 <a href="https://www.nta.go.jp/users/gensen/2026kiso/index.htm" rel="noopener noreferrer" target="_blank">国税庁｜2026年度の基礎控除等の改正・適用時期</a>
 <a href="https://www.nta.go.jp/publication/pamph/gensen/2026kaisei.pdf" rel="noopener noreferrer" target="_blank">国税庁｜2026年4月 源泉所得税の改正のあらまし</a>

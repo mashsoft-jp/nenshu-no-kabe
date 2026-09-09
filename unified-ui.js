@@ -55,12 +55,26 @@
       row.append(month,wrap,remove);host.append(row);
     });
   }
+  const dependentLabels={under16:'16歳未満',young:'16〜18歳',specific:'19〜22歳（特定）',adult:'23〜69歳',elderly:'70歳以上（同居老親等以外）',cohabiting:'70歳以上（同居老親等）'};
+  function createDependentFields(){
+    for(const prefix of ['dependent','previousDependent']){
+      const host=el(prefix+'Fields');
+      P.dependentKeys.forEach(key=>{
+        const field=document.createElement('div');field.className='sim-field';
+        const label=document.createElement('label');label.htmlFor=prefix+'_'+key;label.textContent=dependentLabels[key]+'（人）';
+        const control=document.createElement('input');control.id=label.htmlFor;control.type='number';control.min=0;control.max=10;control.step=1;control.inputMode='numeric';control.value=0;
+        field.append(label,control);host.append(field);
+      });
+    }
+  }
+  function dependentText(d){return P.dependentKeys.filter(k=>d[k]>0).map(k=>dependentLabels[k]+':'+d[k]+'人').join('／')||'なし';}
   function populateConditions() {
-    const fields={monthlyGross:'monthlyGross',simAge:'age',simPrefecture:'prefecture',simEmployment:'employment',
+    const fields={withholdingDependentMode:'withholdingDependentMode',withholdingDependents:'withholdingDependents',previousDependentMode:'previousDependentMode',monthlyGross:'monthlyGross',simAge:'age',simPrefecture:'prefecture',simEmployment:'employment',
       simSocialMode:'socialMode',simSocialAnnual:'socialAnnual',simResidentMode:'residentMode',simResidentAnnual:'residentAnnual',
       standardMode:'standardMode',healthStandard:'healthStandard',pensionStandard:'pensionStandard',nonTax:'nonTax',
       monthlyResidentMode:'monthlyResidentMode',residentCollectionMode:'residentCollectionMode',residentMonthly:'residentMonthly',previousSalary:'previousSalary',previousSocial:'previousSocial',
       otherDeduction:'other',priorBonusStandard:'priorBonusStandard'};
+    P.dependentKeys.forEach(k=>{el('dependent_'+k).value=input.dependents[k];el('previousDependent_'+k).value=input.previousDependents[k];});
     Object.entries(fields).forEach(([id,key])=>el(id).value=input[key]);
     if(!Array.from(el('simGraphMax').options).some(o=>+o.value===graphMax)) {
       const opt=document.createElement('option');opt.value=graphMax;opt.textContent=man(graphMax);el('simGraphMax').append(opt);
@@ -68,7 +82,10 @@
     el('simGraphMax').value=graphMax;renderBonusRows();syncConditions();
   }
   function readConditions() {
-    input={monthlyGross:number('monthlyGross'),bonuses:[...el('bonusRows').children].map(row=>({month:+row.querySelector('select').value,gross:row.querySelector('input').valueAsNumber})),
+    input={dependents:Object.fromEntries(P.dependentKeys.map(k=>[k,number('dependent_'+k)])),
+      previousDependents:Object.fromEntries(P.dependentKeys.map(k=>[k,number('previousDependent_'+k)])),
+      withholdingDependentMode:el('withholdingDependentMode').value,withholdingDependents:number('withholdingDependents'),previousDependentMode:el('previousDependentMode').value,
+      monthlyGross:number('monthlyGross'),bonuses:[...el('bonusRows').children].map(row=>({month:+row.querySelector('select').value,gross:row.querySelector('input').valueAsNumber})),
       age:number('simAge'),prefecture:el('simPrefecture').value,employment:+el('simEmployment').value,
       socialMode:el('simSocialMode').value,socialAnnual:number('simSocialAnnual'),residentMode:el('simResidentMode').value,residentAnnual:number('simResidentAnnual'),
       standardMode:el('standardMode').value,healthStandard:+el('healthStandard').value,pensionStandard:+el('pensionStandard').value,
@@ -85,6 +102,13 @@
     }
   }
   function syncConditions() {
+    el('withholdingDependentsWrap').hidden=input.withholdingDependentMode!=='manual';
+    el('previousDependentFields').hidden=input.previousDependentMode!=='manual';
+    try {
+      const d=P.dependentAmounts(input.dependents);
+      el('dependentSummary').textContent=d.count?d.count+'人':'なし';
+      el('dependentDeductionHint').textContent='年間の扶養控除：所得税 '+yen(d.national)+'／住民税 '+yen(d.resident)+'。通常月の源泉徴収人数：'+P.withholdingCount(input)+'人。16歳未満は扶養控除なし・住民税の非課税人数に含めます。';
+    }catch{el('dependentSummary').textContent='入力を確認';el('dependentDeductionHint').textContent='人数は合計10人までの整数で入力してください。';}
     el('simSocialManualWrap').hidden=input.socialMode!=='manual';el('simResidentManualWrap').hidden=input.residentMode!=='manual';
     el('standardManualWrap').hidden=input.standardMode!=='manual';el('monthlyResidentManualWrap').hidden=input.monthlyResidentMode!=='manual';
     el('previousWrap').hidden=input.monthlyResidentMode!=='previous';
@@ -93,7 +117,7 @@
       ?'通知書の対象年度の7月〜翌5月分を通常月に使用します。6月分は別に表示します。'
       :input.monthlyResidentMode==='manual'
       ?'通知書・給与明細の月額を優先します。年額を変更しても、この月額は上書きしません。'
-      :'2026年度を東京23区・前年扶養なしで概算。通知書の年額とは連動しません。';
+      :'2026年度を東京23区の制度と前年の扶養条件で概算。通知書の年額とは連動しません。';
     el('priorBonusWrap').hidden=!input.bonuses.some(b=>b.month<=3);
     el('bonusEmpty').hidden=input.bonuses.length!==0;el('bonusTotalWrap').hidden=input.bonuses.length===0;el('bonusLimitHint').hidden=input.bonuses.length===0;
     el('addBonus').disabled=input.bonuses.length>=3;
@@ -295,8 +319,9 @@
       if(m.residentDetail?.notice){
         residentAllocationDetails(box,m.residentDetail);
       }else if(m.residentDetail){const d=m.residentDetail;
-        annualParagraph(box,'2025年給与収入 '+yen(d.yearSalary)+' − 給与所得控除 → 給与所得 '+yen(d.income)+'。社会保険料 '+yen(d.yearSocial)+'・基礎控除 '+yen(d.basic)+'を控除 → 課税所得 '+yen(d.taxable)+'.');
+        annualParagraph(box,'2025年給与収入 '+yen(d.yearSalary)+' − 給与所得控除 − 所得金額調整控除 '+yen(d.incomeAdjustment||0)+' → 給与所得 '+yen(d.income)+'。社会保険料 '+yen(d.yearSocial)+'・基礎控除 '+yen(d.basic)+'・扶養控除 '+yen(d.dependentDeduction||0)+'を控除 → 課税所得 '+yen(d.taxable)+'.');
         annualParagraph(box,'2026年度年額 '+yen(d.annual)+'。6月 '+yen(d.june)+'、7月〜翌5月 各'+yen(d.monthly)+'。');
+        annualParagraph(box,'前年の扶養：'+dependentText(P.previousFamily(input))+'（'+(input.previousDependentMode==='same'?'今年と同じ区分と仮定':'2025年末を個別指定')+'）。');
         if(input.monthlyResidentMode==='estimate')annualParagraph(box,'前年も同じ給与・賞与、前年保険料は今回の年間自動概算から子ども・子育て支援金を除いた額と仮定しています。');
       }else annualParagraph(box,'通知書などの入力月額を使用。通常月の自動計算は行いません。');
       const d=r.resident;
@@ -309,10 +334,10 @@
         }
       }
       else{
-        annualParagraph(box,'給与所得 '+yen(r.income)+' − 社会保険料 '+yen(r.social.annual)+' − 基礎控除 '+yen(d.basic)+' → 課税所得 '+yen(d.taxable),'detail-step');
+        annualParagraph(box,'給与所得 '+yen(r.income)+' − 社会保険料 '+yen(r.social.annual)+' − 基礎控除 '+yen(d.basic)+' − 扶養控除 '+yen(d.dependentDeduction||0)+' → 課税所得 '+yen(d.taxable),'detail-step');
         annualParagraph(box,'所得割 '+yen(d.ward+d.metro)+' ＋ 均等割・森林環境税 '+yen(d.flat)+' ＝ '+yen(d.annual),'detail-formula');
         annualParagraph(box,d.flat===0?'非課税判定により0円。':'特別区民税 '+yen(d.ward)+'（6%）＋都民税 '+yen(d.metro)+'（4%）。調整控除を反映。均等割4,000円＋森林環境税1,000円。');
-        annualParagraph(box,'東京23区・2027年度・配偶者と扶養なしの概算です。所得税の設定変更では住民税の制度を変更しません。');
+        annualParagraph(box,'東京23区・2027年度・入力した扶養条件での概算です。所得税の設定変更では住民税の制度を変更しません。');
       }
       return;
     }
@@ -388,16 +413,16 @@
   }
   function renderTax(c) {
     const r=c[detailMode],t=r.national,body=el('simTaxBody');body.replaceChildren();
-    const m=c.current.monthly;el('monthlyTaxDetail').textContent='通常月（現行）：社保控除後 '+yen(m.income.a)+' → 課税給与所得 '+yen(m.income.taxable)+' → 所得税等 '+yen(m.incomeTax)+'。甲欄・扶養0人の電算機計算特例。賞与の源泉徴収額は含めません。';
+    const m=c.current.monthly;el('monthlyTaxDetail').textContent='通常月（現行）：社保控除後 '+yen(m.income.a)+' → 課税給与所得 '+yen(m.income.taxable)+' → 所得税等 '+yen(m.incomeTax)+'。甲欄・扶養'+P.withholdingCount(input)+'人（控除 '+yen(m.income.dependentDeduction)+'）の電算機計算特例。賞与の源泉徴収額は含めません。';
     const route=el('simTaxRoute');route.replaceChildren();
-    [['給与所得',r.income],['− 社会保険料控除',r.social.annual],['− 基礎控除',t.basic],['＝ 課税所得',t.taxable]].forEach(([title,v])=>{const span=document.createElement('span');span.textContent=title+' ';const strong=document.createElement('strong');strong.textContent=man(v);span.append(strong);route.append(span);});
+    [['給与所得',r.income],['− 社会保険料控除',r.social.annual],['− 基礎控除',t.basic],['− 扶養控除',t.dependentDeduction],['＝ 課税所得',t.taxable]].forEach(([title,v])=>{const span=document.createElement('span');span.textContent=title+' ';const strong=document.createElement('strong');strong.textContent=man(v);span.append(strong);route.append(span);});
     t.portions.forEach(part=>{
       const range=part.upper===null?man(part.lower)+'超':man(part.lower)+'〜'+man(part.upper);
       const row=appendTableRow(body,[range,yen(part.used),n(part.rateBp/100)+'%',yen(part.tax)],part.used===0?'sim-zero':'');
       const bar=document.createElement('span');bar.className='sim-proportion';const inner=document.createElement('i');inner.style.width=(t.taxable?part.used/t.taxable*100:0)+'%';bar.append(inner);row.children[1].prepend(bar);
     });
     appendTableRow(body,['本体の所得税 合計','','',yen(t.tax)],'sim-total');
-    el('simTaxFooter').textContent=(detailMode==='current'?'現行制度':'仮想制度')+'の内訳。給与所得は、課税対象の年間給与収入（非課税通勤手当を除く）から給与所得控除 '+yen(r.salaryDeduction)+' を引いた金額です。上の表は復興特別所得税を加える前。復興特別所得税 '+yen(t.reconstruction)+' を加え、合計の100円未満切捨て後 '+yen(t.annual)+' として比較しています。区間内の小数円は表では四捨五入表示し、計算は合計後に切捨てます。';
+    el('simTaxFooter').textContent=(detailMode==='current'?'現行制度':'仮想制度')+'の内訳。給与所得は、課税対象の年間給与収入（非課税通勤手当を除く）から給与所得控除 '+yen(r.salaryDeduction)+' と所得金額調整控除 '+yen(r.incomeAdjustment)+' を引いた金額です。扶養区分：'+dependentText(input.dependents)+'。上の表は復興特別所得税を加える前。復興特別所得税 '+yen(t.reconstruction)+' を加え、合計の100円未満切捨て後 '+yen(t.annual)+' として比較しています。区間内の小数円は表では四捨五入表示し、計算は合計後に切捨てます。';
   }
   function renderIncomeTable() {
     const samples=new Set([1000000,1190000,1500000,1780000,2000000,3000000,4000000,5000000,6000000,7000000,8000000,10000000,12000000,20000000,30000000,50000000,100000000].filter(v=>v<=graphMax&&v>=P.graphMinimum(input)));
@@ -558,7 +583,7 @@
   function download(contents,type,filename) {
     const blob=new Blob([contents],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   }
-  function documentForExport() {return {format:'nenshu-no-kabe',version:3,checkedAt:'2026-09-09',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
+  function documentForExport() {return {format:'nenshu-no-kabe',version:4,checkedAt:'2026-09-09',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
 
   // A shortcut opens the optional editor explicitly; collapsing never resets a policy.
   document.querySelectorAll('[data-sim-open-editor]').forEach(link=>link.addEventListener('click',e=>{
@@ -634,7 +659,7 @@
       if(file.size>200000)throw new Error('設定ファイルは200KB以下にしてください。');
       const doc=P.validateDocument(JSON.parse(await file.text()));
       input=doc.input;policy=doc.policy;graphMax=doc.graphMax;selected=0;history=[P.currentPolicy()];commit();
-      populateConditions();renderEditor();syncBasic();update();notify(doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':doc.residentLegacy?'旧設定の年額・月額を別々に保持しました。月額を連動するには「通知書の年額から算出」を選んでください。':'設定を読み込みました。');
+      populateConditions();renderEditor();syncBasic();update();notify((doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':doc.residentLegacy?'旧設定の年額・月額を別々に保持しました。月額を連動するには「通知書の年額から算出」を選んでください。':'設定を読み込みました。')+(doc.dependentLegacy?' 旧設定の扶養は0人として保持しました。':''));
     } catch(error){notify('読み込みできません：'+error.message);}
     el('simFile').value='';
   });
@@ -643,8 +668,8 @@
     const data=[...getChartData()];
     if(!data.some(c=>c.gross===input.annualGross))data.push({gross:input.annualGross,...P.compare(input,policy)});
     data.sort((a,b)=>a.gross-b.gross);
-    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）','住民税年額の根拠','通常月住民税（円）','住民税月額の根拠','通知書配分6月（参考・円）','通知書配分7月〜翌5月（参考・円）'];
-    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable,input.residentMode==='manual'?'通知書等の対象年度・固定年額':'2027年度予測',c.current.monthly.residentTax,monthlyResidentLabel(),input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).june:'',input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).monthly:'']);
+    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）','住民税年額の根拠','通常月住民税（円）','住民税月額の根拠','通知書配分6月（参考・円）','通知書配分7月〜翌5月（参考・円）','2026年の扶養区分','通常月の源泉徴収人数','2025年の扶養区分','所得税扶養控除（円）','住民税扶養控除（概算用・円）','所得金額調整控除（円）'];
+    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable,input.residentMode==='manual'?'通知書等の対象年度・固定年額':'2027年度予測',c.current.monthly.residentTax,monthlyResidentLabel(),input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).june:'',input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).monthly:'',dependentText(input.dependents),P.withholdingCount(input),dependentText(P.previousFamily(input)),c.current.national.dependentDeduction,P.dependentAmounts(input.dependents).resident,c.current.incomeAdjustment]);
     download('\uFEFF'+[header,...rows].map(row=>row.join(',')).join('\r\n'),'text/csv;charset=utf-8','nenshu-no-kabe-comparison.csv');
   });
   el('copyButton').addEventListener('click',async()=>{
@@ -657,6 +682,8 @@
       ...(a.monthly.residentDetail?.notice?['6月の住民税：'+yen(a.monthly.residentDetail.june),'6月の手取り（住民税差のみ）：'+yen(a.monthly.net+a.monthly.residentTax-a.monthly.residentDetail.june)]:[]),
       '年間の手取り：'+yen(a.net),'月平均：'+yen(a.net/12)+'（年間手取り÷12）',
       '加入支部：'+input.prefecture+'／年齢：'+input.age+'歳',
+      '扶養（2026年）：'+dependentText(input.dependents),'通常月の源泉徴収人数：'+P.withholdingCount(input)+'人','扶養（2025年）：'+dependentText(P.previousFamily(input)),
+      '所得税の年間扶養控除：'+yen(a.national.dependentDeduction),'住民税の扶養控除（概算用）：'+yen(P.dependentAmounts(input.dependents).resident),'所得金額調整控除：'+yen(a.incomeAdjustment),
       '年間社会保険料：'+yen(a.social.annual),'年間所得税等：'+yen(a.national.annual),'年間住民税等：'+yen(a.resident.annual),
       ...(hasPolicyChange()?['変更後の年間手取り：'+yen(b.net),'年間手取り増減：'+signed(lastComparison.delta)]:[]),
       '所得税は2026年分、社会保険は9月の固定料率。年間住民税は'+(input.residentMode==='manual'?'通知書等の対象年度の入力年額（2027年度の予測ではない）。':'2027年度の予測額。')+'実際の年間振込総額ではありません。'];
@@ -665,5 +692,5 @@
     catch{const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.left='-9999px';document.body.append(area);area.select();const ok=document.execCommand('copy');area.remove();notify(ok?'計算条件と結果をコピーしました。':'コピーできませんでした。ブラウザの権限を確認してください。');}
   });
   let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(allValid&&!el('policyView').hidden)drawGraph();},100);});
-  populateConditions();renderEditor();syncBasic();update();
+  createDependentFields();populateConditions();renderEditor();syncBasic();update();
 })();

@@ -89,7 +89,7 @@ with sync_playwright() as p:
         expect(page.locator('#residentRegular')).to_have_text('0円')
         expect(page.locator('#residentJune')).to_have_text('5,000円')
         june_saved = saved(page)
-        check(june_saved['version']==3 and june_saved['input']['residentCollectionMode']=='june','v3 includes collection choice')
+        check(june_saved['version']==4 and june_saved['input']['residentCollectionMode']=='june','v4 includes collection choice')
         page.locator('#residentCollectionMode').select_option('split')
         load(page,june_saved)
         expect(page.locator('#residentCollectionMode')).to_have_value('june')
