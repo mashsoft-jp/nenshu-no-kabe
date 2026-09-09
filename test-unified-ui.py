@@ -74,7 +74,7 @@ with sync_playwright() as p:
         with page.expect_download() as dl:
             page.locator('#simSave').click()
         saved=json.loads(Path(dl.value.path()).read_text())
-        check(saved['format']=='nenshu-no-kabe' and saved['version']==2,'v2 settings schema')
+        check(saved['format']=='nenshu-no-kabe' and saved['version']==3,'v3 settings schema')
         check(saved['input']['monthlyGross']==600000 and len(saved['input']['bonuses'])==2,'settings include bonuses')
         # Count limit and prior fiscal cap UI.
         page.locator('#addBonus').click();expect(page.locator('#addBonus')).to_be_disabled();expect(page.locator('#priorBonusWrap')).to_be_visible()
@@ -93,11 +93,11 @@ with sync_playwright() as p:
         expect(page.locator('#annual-button-social')).to_be_visible()
         page.locator('#monthlyResidentMode').select_option('manual');page.locator('#residentMonthly').fill('12000')
         page.locator('#simResidentMode').select_option('manual');page.locator('#simResidentAnnual').fill('100000')
-        page.locator('#annual-button-residentTax').click();expect(page.locator('#annual-detail-residentTax')).to_contain_text('通常月（2026年度）：12,000円');expect(page.locator('#annual-detail-residentTax')).to_contain_text('年間手取りに使う住民税：100,000円')
+        page.locator('#annual-button-residentTax').click();expect(page.locator('#annual-detail-residentTax')).to_contain_text('通常月（通知書の指定月額）：12,000円');expect(page.locator('#annual-detail-residentTax')).to_contain_text('年間手取りに使う住民税：100,000円')
         clean(page,'manual overrides')
         # Import saved state and legacy annual state.
         page.locator('#simFile').set_input_files({'name':'settings.json','mimeType':'application/json','buffer':json.dumps(saved).encode()})
-        expect(page.locator('#simSocialMode')).to_have_value('auto');expect(page.locator('#monthlyGross')).to_have_value('600000');check(page.locator('[data-bonus-row]').count()==2,'v2 reload bonuses')
+        expect(page.locator('#simSocialMode')).to_have_value('auto');expect(page.locator('#monthlyGross')).to_have_value('600000');check(page.locator('[data-bonus-row]').count()==2,'v3 reload bonuses')
         legacy={'format':'tedori-policy','version':1,'input':{'annualGross':4000000,'age':30,'prefecture':'東京都','employment':50,'socialMode':'auto','socialAnnual':881400,'residentMode':'estimate','residentAnnual':307200},'policy':saved['policy'],'graphMax':12000000}
         page.locator('#simFile').set_input_files({'name':'old.json','mimeType':'application/json','buffer':json.dumps(legacy).encode()})
         expect(page.locator('#monthlyGross')).to_have_value('333333');expect(page.locator('#derivedAnnualGross')).to_have_text('3,999,996円');check(page.locator('[data-bonus-row]').count()==0,'legacy no-bonus input')

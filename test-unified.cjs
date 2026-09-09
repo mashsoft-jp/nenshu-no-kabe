@@ -76,3 +76,6 @@ for(let i=0;i<120;i++){
  check(Number.isSafeInteger(r.net),'integer yen net');
 }
 console.log(`PASS ${checks} unified engine checks`);
+
+// Run notice allocation regressions in the existing CI entry point.
+require('./test-resident-notice.cjs');
