@@ -27,11 +27,19 @@
             <div class="sim-field"><label for="nonTax">月給に含む非課税通勤手当（円）</label><input id="nonTax" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"></div>
             <div class="sim-field"><label for="standardMode">標準報酬月額</label><select id="standardMode"><option value="auto">入力した月給から等級を仮置き</option><option value="manual">決定済みの等級を指定</option></select></div>
             <div id="standardManualWrap" hidden><div class="sim-field"><label for="healthStandard">健康保険の標準報酬月額</label><select id="healthStandard"></select></div><div class="sim-field"><label for="pensionStandard">厚生年金の標準報酬月額</label><select id="pensionStandard"></select></div></div>
-            <div class="sim-field"><label for="monthlyResidentMode">通常月の住民税（2026年度）</label><select id="monthlyResidentMode"><option value="estimate">前年も同じ給与・賞与として概算</option><option value="previous">前年の給与・保険料から概算</option><option value="manual">通知書の月額を入力</option></select><p class="sim-hint">自動概算は東京23区・前年扶養なし。他の自治体は通知書月額を指定してください。</p></div>
+            <div class="sim-field"><label for="simResidentMode">年間手取りに使う住民税</label><select id="simResidentMode"><option value="estimate">2027年度の負担を東京23区で概算</option><option value="manual">通知書の年額を入力・月額にも反映</option></select><p class="sim-hint">通知書の年額はその通知書の対象年度です。翌年度の予測額とは区別します。</p></div>
+            <div id="simResidentManualWrap" hidden>
+              <div class="sim-field"><label for="simResidentAnnual">給与天引き分の住民税年額（森林環境税込み・円）</label><input id="simResidentAnnual" type="number" min="0" max="50000000" step="1" value="307200" inputmode="numeric" aria-describedby="residentNoticeHint"><p class="sim-hint" id="residentNoticeHint">給与特別徴収の通知書を使用。普通徴収・年金天引き分や未徴収残額は含めません。</p></div>
+              <div class="sim-field"><label for="residentCollectionMode">通知書の徴収方法</label><select id="residentCollectionMode"><option value="split">6月〜翌5月の12回</option><option value="june">6月に全額徴収</option></select><p class="sim-hint">少額などで6月に全額徴収される場合は、通知書に合わせて選択してください。</p></div>
+              <div id="residentSchedule" class="resident-schedule" hidden>
+                <p class="sim-hint">通知書の対象年度の配分</p>
+                <dl><div><dt>6月</dt><dd id="residentJune">—</dd></div><div><dt>7月〜翌5月（各月）</dt><dd id="residentRegular">—</dd></div></dl>
+                <p id="residentScheduleTotal" class="sim-hint">—</p><p id="residentScheduleUse" class="sim-hint">—</p>
+              </div>
+            </div>
+            <div class="sim-field"><label for="monthlyResidentMode">通常月の住民税</label><select id="monthlyResidentMode"><option value="estimate">前年も同じ給与・賞与として概算</option><option value="previous">前年の給与・保険料から概算</option><option value="annual" id="residentAnnualOption" disabled>通知書の年額から算出</option><option value="manual">通知書の月額を入力・優先</option></select><p class="sim-hint" id="monthlyResidentHint">自動概算は2026年度・東京23区・前年扶養なし。</p></div>
             <div id="previousWrap" hidden><div class="sim-field"><label for="previousSalary">2025年の給与収入（賞与込み・非課税分を除く円）</label><input id="previousSalary" type="number" min="0" max="100000000" value="6000000" step="1" inputmode="numeric"></div><div class="sim-field"><label for="previousSocial">2025年に支払った社会保険料（円）</label><input id="previousSocial" type="number" min="0" max="50000000" value="867600" step="1" inputmode="numeric"></div></div>
-            <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"></div>
-            <div class="sim-field"><label for="simResidentMode">年間手取りに使う住民税</label><select id="simResidentMode"><option value="estimate">2027年度の負担を東京23区で概算</option><option value="manual">通知書などの年額を入力・固定</option></select><p class="sim-hint">通常月の住民税とは対象年度が異なります。</p></div>
-            <div class="sim-field" id="simResidentManualWrap" hidden><label for="simResidentAnnual">年間の住民税等（円）</label><input id="simResidentAnnual" type="number" min="0" max="50000000" step="1" value="307200" inputmode="numeric"></div>
+            <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"><p class="sim-hint">年度途中の転職・税額変更などは通知書の月額を優先します。ここでは6月の手取りを自動算出しません。</p></div>
             <div class="sim-field"><label for="simSocialMode">年間手取りに使う社会保険料</label><select id="simSocialMode"><option value="auto">月給分×12＋賞与分で概算</option><option value="manual">本人負担の年額を入力・固定</option></select></div>
             <div class="sim-field" id="simSocialManualWrap" hidden><label for="simSocialAnnual">年間社会保険料（円）</label><input id="simSocialAnnual" type="number" min="0" max="50000000" step="1" value="881400" inputmode="numeric"><p class="sim-hint">年間手取りのみ上書きします。通常月は月給・等級から計算します。</p></div>
             <div class="sim-field"><label for="otherDeduction">その他の給与控除（月額・円）</label><input id="otherDeduction" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"><p class="sim-hint">年額は月額×12。所得控除には含めません。</p></div>
@@ -44,7 +52,7 @@
       <section class="sim-card sim-summary sim-live unified-summary" aria-labelledby="simResultHeading">
         <div class="unified-summary-heading"><h2 id="simResultHeading">手取り額</h2><span class="badge green">現行制度</span></div>
         <div class="pay-pair">
-          <div class="pay-box"><h3>通常月</h3><div class="pay-amount"><strong id="monthlyNet" aria-live="polite" aria-atomic="true">—</strong><span>／月</span></div><p>賞与を含まない月・源泉徴収後</p><p id="monthlyNetRate" class="pay-meta">—</p></div>
+          <div class="pay-box"><h3 id="monthlyPayHeading">通常月</h3><div class="pay-amount"><strong id="monthlyNet" aria-live="polite" aria-atomic="true">—</strong><span>／月</span></div><p>賞与を含まない月・源泉徴収後</p><p id="monthlyNetRate" class="pay-meta">—</p><div id="residentJunePay" class="resident-june-pay" hidden><span>6月の手取り（住民税差のみ）</span><strong id="residentJuneNet">—</strong><p>住民税は通知書の対象年度。他の控除は通常月と同じ固定条件です。</p></div></div>
           <div class="pay-box annual-pay"><h3>年間（賞与込み）</h3><div class="pay-amount"><strong id="simCurrentNet" aria-live="polite" aria-atomic="true">—</strong><span>／年</span></div><p id="simCurrentMonthly">—</p><p id="annualNetRate" class="pay-meta">—</p></div>
         </div>
         <div class="pay-components"><div><span>月給 × 12</span><strong id="salaryAnnual">—</strong></div><span>＋</span><div><span>賞与合計</span><strong id="summaryBonus">—</strong></div><span>＝</span><div><span>額面年収</span><strong id="summaryGross">—</strong></div></div>
@@ -54,14 +62,14 @@
           <p id="simEqualHint" class="sim-empty-state">この年収では差額がありません。</p>
           <p class="sim-footnote comparison-scope">変更は年間の所得税に反映します。通常月の源泉徴収額は現行制度のままです。</p>
         </div>
-        <p class="sim-summary-bottom">通常月と年間の計算方法は異なります。年間は2026年分の所得税・翌年度の住民税・9月の社会保険料率による概算で、実際の年間振込総額ではありません。</p>
+        <p class="sim-summary-bottom" id="residentSummaryNote">通常月と年間の計算方法は異なります。年間は2026年分の所得税・翌年度の住民税・9月の社会保険料率による概算で、実際の年間振込総額ではありません。</p>
       </section>
       <section class="sim-card sim-live" aria-labelledby="simBreakdownHeading">
         <div class="sim-card-title"><h2 id="simBreakdownHeading">内訳</h2><span class="sim-locked">本人負担</span></div>
         <div class="breakdown-bars"><div><div class="bar-caption"><span>通常月</span><span id="monthlyBarLabel">—</span></div><div id="monthlyBar" class="stacked" role="img" aria-label="通常月の内訳"></div></div><div><div class="bar-caption"><span>年間（賞与込み）</span><span id="annualBarLabel">—</span></div><div id="annualBar" class="stacked" role="img" aria-label="年間の内訳"></div></div></div>
         <p class="detail-guide">各項目の「詳細」で月給分・賞与分の計算を確認できます。</p>
         <div class="sim-table-wrap"><table class="sim-table unified-breakdown"><thead><tr><th scope="col">項目</th><th scope="col">通常月</th><th scope="col">年間<span>賞与込み</span></th><th scope="col" class="policy-col" hidden>変更後<span>年間</span></th></tr></thead><tbody id="simComparisonBody"></tbody></table></div>
-        <p class="sim-footnote">月額の所得税は源泉徴収額、年額は年間所得から計算した税額です。住民税も対象年度が異なるため、年額は月額×12とは一致しません。</p>
+        <p class="sim-footnote" id="residentBreakdownNote">月額の所得税は源泉徴収額、年額は年間所得から計算した税額です。住民税も対象年度が異なるため、年額は月額×12とは一致しません。</p>
         <p class="sim-footnote" id="bonusSummaryNote" hidden></p>
       </section>
       <details class="sim-card sim-tax-options" id="simEditor">
@@ -125,10 +133,10 @@
 </div></div>
   <section class="sim-card sim-full-width"><details id="simSources"><summary>計算の前提・現行制度・公式資料</summary><div class="sim-source-grid">
 <div>
-<p><strong>計算モデル：</strong>所得税は成立済みの2026年分の制度（12月の年末調整から反映される改正を含む）。住民税の概算はこの年収に対応する2027年度の負担を年額で差し引きます（課税収入は月給×12＋賞与−非課税手当×12）。社会保険料は2026年9月の料率による月給分×12＋賞与分。1〜3月の賞与にも同じ9月の料率を使用する固定条件のモデルです。実際の2026年1〜12月の入出金を再現する計算ではありません。</p>
-<p><strong>通常月：</strong>2026年9月の通常給与の源泉徴収額（甲欄・扶養0人）と、2026年度の住民税で計算。住民税は「前年も同じ給与・賞与」の仮定、前年実績の指定、通知書月額の指定から選べます。年間手取り÷12とは別の金額です。</p><p><strong>賞与：</strong>年3回までの支給月・額面を入力。標準賞与額は同月の額面を合算後、1,000円未満切捨て。厚生年金は月150万円、健康保険等は4月〜翌3月で573万円が上限。1〜3月に支給がある場合は前年4〜12月の標準賞与累計額を指定（初期0円）。当年分の額面年収には前年賞与は加算しません。支給月ごとの料率変更や異動・免除は再現しません。</p><p><strong>所得税：</strong>給与所得控除後の所得から社会保険料控除・基礎控除を控除し、課税所得の1,000円未満を切捨て。各段階の超過部分に税率を掛けて合算します。仮想制度も同じ方法で、速算表の控除額は固定流用しません。税額の1円未満切捨て後に復興特別所得税2.1%を計算し、合計の100円未満を切り捨てる概算です。</p>
+<p><strong>計算モデル：</strong>所得税は成立済みの2026年分の制度（12月の年末調整から反映される改正を含む）。住民税の自動概算はこの年収に対応する2027年度の負担を年額で差し引きます。通知書年額の入力時は、その対象年度の金額に置き換えます（課税収入は月給×12＋賞与−非課税手当×12）。社会保険料は2026年9月の料率による月給分×12＋賞与分。1〜3月の賞与にも同じ9月の料率を使用する固定条件のモデルです。実際の2026年1〜12月の入出金を再現する計算ではありません。</p>
+<p><strong>通常月：</strong>2026年9月の通常給与の源泉徴収額（甲欄・扶養0人）で計算。住民税は通知書年額から月額を算出する方法、通知書月額の直接指定、2026年度の概算から選べます。年額連動時は7月〜翌5月分を通常月に使用し、住民税差だけを反映した6月の手取りも表示します。年間手取り÷12とは別の金額です。</p><p><strong>賞与：</strong>年3回までの支給月・額面を入力。標準賞与額は同月の額面を合算後、1,000円未満切捨て。厚生年金は月150万円、健康保険等は4月〜翌3月で573万円が上限。1〜3月に支給がある場合は前年4〜12月の標準賞与累計額を指定（初期0円）。当年分の額面年収には前年賞与は加算しません。支給月ごとの料率変更や異動・免除は再現しません。</p><p><strong>所得税：</strong>給与所得控除後の所得から社会保険料控除・基礎控除を控除し、課税所得の1,000円未満を切捨て。各段階の超過部分に税率を掛けて合算します。仮想制度も同じ方法で、速算表の控除額は固定流用しません。税額の1円未満切捨て後に復興特別所得税2.1%を計算し、合計の100円未満を切り捨てる概算です。</p>
 <p><strong>2026年分の基礎控除：</strong>合計所得489万円以下104万円、655万円以下67万円、2,350万円以下62万円、2,400万円以下48万円、2,450万円以下32万円、2,500万円以下16万円、それを超えると0円。現行制度は固定し、仮想制度側だけを編集できます。</p>
-<p><strong>通勤手当・その他控除：</strong>入力月給に含む非課税通勤手当は所得税・住民税の給与収入から除外し、社会保険料の報酬には含めます。その他の給与控除は月額×12を手取りから控除し、所得控除には含めません。</p><p><strong>住民税：</strong>東京23区・本人に特別な非課税要件なし・配偶者や扶養なし・給与所得のみ。所得割6%＋4%、調整控除、均等割と森林環境税を計算。所得税の基礎控除を変えても住民税の控除額・調整控除の制度は変えません。自治体ごとの上乗せや各種控除は対象外です。</p>
+<p><strong>通勤手当・その他控除：</strong>入力月給に含む非課税通勤手当は所得税・住民税の給与収入から除外し、社会保険料の報酬には含めます。その他の給与控除は月額×12を手取りから控除し、所得控除には含めません。</p><p><strong>住民税の自動概算：</strong>東京23区・本人に特別な非課税要件なし・配偶者や扶養なし・給与所得のみ。所得割6%＋4%、調整控除、均等割と森林環境税を計算。所得税の基礎控除を変えても住民税の控除額・調整控除の制度は変えません。自治体ごとの上乗せや各種控除は対象外です。</p>
 <p><strong>社会保険：</strong>協会けんぽ加入済みが前提。健康保険・介護保険・厚生年金・子ども・子育て支援金・雇用保険を計算。賞与を含めず、入力した月給から標準報酬月額の等級を仮置き（決定済み等級の指定も可）。被扶養者からの加入、被扶養者認定、国保、国民年金、65歳以上、年途中の料率・資格・年齢・給与変更は再現しません。手入力は本人の所得控除対象の負担額を指定してください。</p>
 <p><strong>今回の対象外：</strong>年4回以上の賞与、賞与支給時の源泉徴収・振込額、副業、配偶者・扶養控除、税額控除、住宅ローン、生命保険、医療費、iDeCo、ふるさと納税、世帯手取り、会社独自の扶養手当など。「106万円・130万円の壁を変える」社会保険制度シミュレーションは未実装です。税率変更による雇用・賃金・税収の行動変化も推計しません。</p>
 </div>
@@ -140,6 +148,7 @@
 <a href="https://www.city.chuo.lg.jp/a0009/kurashi/zeikin/juuminzei/r9kaisei.html" rel="noopener noreferrer" target="_blank">中央区｜2027年度から適用される個人住民税の改正</a>
 <a href="https://www.city.katori.lg.jp/living/zeikin/kojinshiminzei/r9zeiseikaisei.html" rel="noopener noreferrer" target="_blank">香取市｜2027年度の給与所得計算の特例</a>
 <a href="https://www.city.minato.tokyo.jp/kazei/kurashi/zekin/juminze/tominze/kesan.html" rel="noopener noreferrer" target="_blank">港区｜特別区民税・都民税の計算</a>
+<a href="https://www.town.aichi-mihama.lg.jp/soshiki/zeimu/juminzei/1/2/5/25.html" rel="noopener noreferrer" target="_blank">美浜町｜住民税の12回徴収・端数配分</a>
 <a href="https://www.city.minato.tokyo.jp/kazei/kurashi/zekin/kojo/shurui.html" rel="noopener noreferrer" target="_blank">港区｜住民税の基礎控除・調整控除</a>
 <a href="https://www.kyoukaikenpo.or.jp/about/business/insurance_rate/rate_prefectures/r08/index.html" rel="noopener noreferrer" target="_blank">協会けんぽ｜2026年度・47支部の料率</a>
 <a href="https://www.kyoukaikenpo.or.jp/assets/R8_13tokyo.pdf" rel="noopener noreferrer" target="_blank">協会けんぽ｜健康保険・厚生年金・支援金の等級表</a>

@@ -22,7 +22,7 @@
     monthlyGross:500000,annualGross:6000000,bonuses:[],nonTax:0,age:30,prefecture:'東京都',employment:50,
     standardMode:'auto',healthStandard:500000,pensionStandard:500000,priorBonusStandard:0,
     socialMode:'auto',socialAnnual:881400,residentMode:'estimate',residentAnnual:307200,
-    monthlyResidentMode:'estimate',residentMonthly:25600,previousSalary:6000000,previousSocial:867600,other:0
+    monthlyResidentMode:'estimate',residentCollectionMode:'split',residentMonthly:25600,previousSalary:6000000,previousSocial:867600,other:0
   };}
   function validateInput(x){
     if(!x||typeof x!=='object')throw new Error('給与条件がありません。');
@@ -44,7 +44,9 @@
     if(x.priorBonusStandard%1000)throw new Error('前年の標準賞与累計額は1,000円単位で入力してください。');
     if(!['auto','manual'].includes(x.socialMode))throw new Error('年間社会保険料の設定が不正です。');
     if(!['estimate','manual'].includes(x.residentMode))throw new Error('年間住民税の設定が不正です。');
-    if(!['estimate','previous','manual'].includes(x.monthlyResidentMode))throw new Error('通常月の住民税の設定が不正です。');
+    if(!['estimate','previous','annual','manual'].includes(x.monthlyResidentMode))throw new Error('通常月の住民税の設定が不正です。');
+    if(x.monthlyResidentMode==='annual'&&x.residentMode!=='manual')throw new Error('月額を年額に連動するには、住民税の通知書年額を入力してください。');
+    if(!['split','june'].includes(x.residentCollectionMode??'split'))throw new Error('住民税の徴収方法が不正です。');
     integer(x.socialAnnual,0,50000000,'年間社会保険料（円）');
     integer(x.residentAnnual,0,50000000,'年間住民税（円）');
     integer(x.residentMonthly,0,MAX_MONTHLY,'通常月の住民税（円）');
@@ -83,6 +85,15 @@
     return {manual:false,annual:sum(parts),parts,monthlyParts,bonusParts,bonusRows,std,healthRate,careRate,
       monthlyTotal:sum(monthlyParts),bonusTotal:sum(bonusParts)};
   }
+  // Salary special collection only: 12 instalments from June through next May.
+  // References and limits: docs/RESIDENT-NOTICE.md. Never infer a national small-tax
+  // threshold from a health-insurance branch. Use the notice for June-only payment.
+  function residentInstallments(annual,collection='split'){
+    integer(annual,0,50000000,'通知書の住民税年額（円）');
+    if(!['split','june'].includes(collection))throw new Error('住民税の徴収方法が不正です。');
+    const monthly=collection==='june'?0:Math.floor(annual/1200)*100;
+    return {annual,monthly,june:annual-monthly*11,collection};
+  }
   // FY2026 resident tax, based on 2025 earnings, same single/no-dependent scope.
   function resident2025(gross,social){
     let income;
@@ -99,6 +110,10 @@
     const withholding=Monthly.withholding(x.monthlyGross-x.nonTax-auto.monthlyTotal,0);
     let residentDetail=null,resident;
     if(x.monthlyResidentMode==='manual')resident=x.residentMonthly;
+    else if(x.monthlyResidentMode==='annual'){
+      residentDetail={...residentInstallments(x.residentAnnual,x.residentCollectionMode??'split'),notice:true};
+      resident=residentDetail.monthly;
+    }
     else{
       const previous=x.monthlyResidentMode==='previous';
       residentDetail=resident2025(previous?x.previousSalary:x.annualGross-x.nonTax*12,
@@ -140,16 +155,23 @@
     return [...unique.values()].sort((a,b)=>a.annualGross-b.annualGross);
   }
   function validateDocument(doc){
-    let x,legacy=false;
+    let x,legacy=false,residentLegacy=false;
     if(doc?.format==='tedori-policy'&&doc.version===1){
       const d=Base.validateDocument(doc);x={...defaultInput(),...d.input,monthlyGross:Math.floor(d.input.annualGross/12),bonuses:[]};
       x.annualGross=annualGross(x);legacy=true;
-    } else if(doc?.format==='nenshu-no-kabe'&&doc.version===2)x=Base.clone(doc.input);
+    } else if(doc?.format==='nenshu-no-kabe'&&[2,3].includes(doc.version)){
+      x=Base.clone(doc.input);
+      if(doc.version===2){
+        // Preserve old annual/monthly independence, rather than changing saved results.
+        if(!['estimate','previous','manual'].includes(x?.monthlyResidentMode))throw new Error('旧設定の住民税月額モードが不正です。');
+        x.residentCollectionMode='split';residentLegacy=x.residentMode==='manual';
+      }else if(!['split','june'].includes(x?.residentCollectionMode))throw new Error('住民税の徴収方法を含む設定JSONを選んでください。');
+    }
     else throw new Error('このアプリで保存した設定JSONを選んでください。');
     validateInput(x);Base.validatePolicy(doc.policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
-    return {format:'nenshu-no-kabe',version:2,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy};
+    return {format:'nenshu-no-kabe',version:3,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy};
   }
   return {...Base,MAX_MONTHLY,MIN_MONTHLY,defaultInput,validateInput,bonusTotal,annualGross,
-    automaticSocial,socialContributions,resident2025,monthlyResult,calculate,compare,
+    automaticSocial,socialContributions,residentInstallments,resident2025,monthlyResult,calculate,compare,
     graphMinimum,atAnnual,sampleForInput,validateDocument};
 });

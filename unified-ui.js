@@ -59,7 +59,7 @@
     const fields={monthlyGross:'monthlyGross',simAge:'age',simPrefecture:'prefecture',simEmployment:'employment',
       simSocialMode:'socialMode',simSocialAnnual:'socialAnnual',simResidentMode:'residentMode',simResidentAnnual:'residentAnnual',
       standardMode:'standardMode',healthStandard:'healthStandard',pensionStandard:'pensionStandard',nonTax:'nonTax',
-      monthlyResidentMode:'monthlyResidentMode',residentMonthly:'residentMonthly',previousSalary:'previousSalary',previousSocial:'previousSocial',
+      monthlyResidentMode:'monthlyResidentMode',residentCollectionMode:'residentCollectionMode',residentMonthly:'residentMonthly',previousSalary:'previousSalary',previousSocial:'previousSocial',
       otherDeduction:'other',priorBonusStandard:'priorBonusStandard'};
     Object.entries(fields).forEach(([id,key])=>el(id).value=input[key]);
     if(!Array.from(el('simGraphMax').options).some(o=>+o.value===graphMax)) {
@@ -72,7 +72,7 @@
       age:number('simAge'),prefecture:el('simPrefecture').value,employment:+el('simEmployment').value,
       socialMode:el('simSocialMode').value,socialAnnual:number('simSocialAnnual'),residentMode:el('simResidentMode').value,residentAnnual:number('simResidentAnnual'),
       standardMode:el('standardMode').value,healthStandard:+el('healthStandard').value,pensionStandard:+el('pensionStandard').value,
-      nonTax:number('nonTax'),monthlyResidentMode:el('monthlyResidentMode').value,residentMonthly:number('residentMonthly'),
+      nonTax:number('nonTax'),monthlyResidentMode:el('monthlyResidentMode').value,residentCollectionMode:el('residentCollectionMode').value,residentMonthly:number('residentMonthly'),
       previousSalary:number('previousSalary'),previousSocial:number('previousSocial'),other:number('otherDeduction'),priorBonusStandard:number('priorBonusStandard')};
     input.annualGross=P.annualGross(input);
   }
@@ -88,6 +88,12 @@
     el('simSocialManualWrap').hidden=input.socialMode!=='manual';el('simResidentManualWrap').hidden=input.residentMode!=='manual';
     el('standardManualWrap').hidden=input.standardMode!=='manual';el('monthlyResidentManualWrap').hidden=input.monthlyResidentMode!=='manual';
     el('previousWrap').hidden=input.monthlyResidentMode!=='previous';
+    el('residentAnnualOption').disabled=input.residentMode!=='manual';
+    el('monthlyResidentHint').textContent=input.monthlyResidentMode==='annual'
+      ?'通知書の対象年度の7月〜翌5月分を通常月に使用します。6月分は別に表示します。'
+      :input.monthlyResidentMode==='manual'
+      ?'通知書・給与明細の月額を優先します。年額を変更しても、この月額は上書きしません。'
+      :'2026年度を東京23区・前年扶養なしで概算。通知書の年額とは連動しません。';
     el('priorBonusWrap').hidden=!input.bonuses.some(b=>b.month<=3);
     el('bonusEmpty').hidden=input.bonuses.length!==0;el('bonusTotalWrap').hidden=input.bonuses.length===0;el('bonusLimitHint').hidden=input.bonuses.length===0;
     el('addBonus').disabled=input.bonuses.length>=3;
@@ -100,6 +106,46 @@
     el('monthlySlider').max=Math.max(2000000,Number.isFinite(input.monthlyGross)?input.monthlyGross:2000000);
     if(Number.isFinite(input.monthlyGross))el('monthlySlider').value=input.monthlyGross;
     document.querySelectorAll('[data-monthly]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.monthly===input.monthlyGross)));
+  }
+
+  function syncResidentSelection(id) {
+    if(!['simResidentMode','simResidentAnnual'].includes(id))return;
+    const monthly=el('monthlyResidentMode');
+    if(el('simResidentMode').value==='manual'){
+      // Explicit monthly amounts are authoritative, even when the annual total changes.
+      if(monthly.value!=='manual')monthly.value='annual';
+    }else if(monthly.value==='annual')monthly.value='estimate';
+  }
+  function monthlyResidentLabel() {
+    return input.monthlyResidentMode==='annual'?'通知書の対象年度・7月〜翌5月':
+      input.monthlyResidentMode==='manual'?'通知書の指定月額':'2026年度概算（年額入力とは独立）';
+  }
+  function renderResidentNotice(c) {
+    const r=c.current,m=r.monthly,linked=input.monthlyResidentMode==='annual';
+    el('residentSchedule').hidden=input.residentMode!=='manual';
+    if(input.residentMode==='manual'){
+      const d=P.residentInstallments(input.residentAnnual,input.residentCollectionMode);
+      el('residentJune').textContent=yen(d.june);el('residentRegular').textContent=yen(d.monthly);
+      el('residentScheduleTotal').textContent=yen(d.june)+' ＋ '+yen(d.monthly)+' × 11 ＝ '+yen(d.annual);
+      el('residentScheduleUse').textContent=linked?'7月〜翌5月分を通常月の手取りに反映。':
+        input.monthlyResidentMode==='manual'?'通常月は指定した月額を優先。上の配分は参考です。':'通常月は別の概算設定。上の配分は参考です。';
+    }
+    el('monthlyPayHeading').textContent=linked?'通常月（7月〜翌5月）':'通常月';
+    el('residentJunePay').hidden=!linked;
+    if(linked)el('residentJuneNet').textContent=yen(m.net+m.residentTax-m.residentDetail.june);
+    el('residentSummaryNote').textContent='年間は2026年分の所得税・9月の社会保険料率と、'+
+      (input.residentMode==='manual'?'通知書などの対象年度の住民税年額を使用します。翌年度の住民税予測ではありません。':'2027年度の住民税予測額を使用します。')+
+      '実際の年間振込総額ではありません。';
+    el('residentBreakdownNote').textContent=linked?
+      '通常月の住民税は通知書年額から算出した7月〜翌5月分。6月は端数等を含むため、住民税年額は通常月×12と一致しない場合があります。所得税の月額は源泉徴収、年額は年間所得から計算します。':
+      '住民税の月額と年額は別設定です。月額の所得税は源泉徴収額、年額は年間所得から計算した税額です。年額は通常月×12とは限りません。';
+  }
+  function residentAllocationDetails(box,d) {
+    annualParagraph(box,'通知書の対象年度：6月 '+yen(d.june)+'／7月〜翌5月 各'+yen(d.monthly),'detail-result');
+    annualParagraph(box,d.collection==='june'?'通知書に合わせて6月に全額徴収。7月〜翌5月は0円。':
+      '7月〜翌5月：'+yen(d.annual)+' ÷ 12 → 100円未満切捨て ＝ '+yen(d.monthly),'detail-step');
+    annualParagraph(box,'6月：'+yen(d.annual)+' − '+yen(d.monthly)+' × 11 ＝ '+yen(d.june),'detail-formula');
+    annualParagraph(box,'給与特別徴収の年額（森林環境税込み）を使用します。年度途中の転職・税額変更や通知書と配分が違う場合は、通知書の月額を直接指定してください。');
   }
 
   function syncBasic() {
@@ -186,6 +232,7 @@
     el('simOptionDescription').textContent=modified?'変更した所得税で比較中です。閉じても設定は保持されます。':'税率・課税所得の上限・段階数・基礎控除を変更できます。';
     el('simFloatingLabel').textContent=modified?'所得税変更による年間増減':'年間手取り（賞与込み）';
     classValue('simFloatingDelta',modified?signed(delta):yen(a.net),modified?delta:1);
+    renderResidentNotice(c);
     el('monthlyNet').textContent=yen(m.net);el('monthlyNetRate').textContent='手取り率 '+(m.net/m.gross*100).toFixed(1)+'%';
     el('simCurrentNet').textContent=yen(a.net);el('simChangedNet').textContent=yen(b.net);
     el('simCurrentMonthly').textContent='月平均 約'+yen(a.net/12)+'（年額÷12）';
@@ -203,7 +250,7 @@
     }else{el('simNextCurrent').textContent=el('simNextChanged').textContent='上限のため対象外';}
     const note=el('simModelNote');note.replaceChildren();
     const para=(title,text)=>{const p=document.createElement('p');p.className='sim-note-item';const strong=document.createElement('strong');strong.textContent=title;p.append(strong,document.createTextNode(' '+text));note.append(p);};
-    para('通常月', '2026年9月の源泉徴収と2026年度の住民税。住民税は'+(input.monthlyResidentMode==='manual'?'通知書などの入力月額。':input.monthlyResidentMode==='previous'?'入力した前年実績から概算。':'前年も同じ給与・賞与と仮定し、社会保険料も今回の年額から支援金を除いた額と仮定。')+'賞与が支給されない月の概算です。');
+    para('通常月', '2026年9月の源泉徴収。住民税は'+(input.monthlyResidentMode==='annual'?'通知書の対象年度の7月〜翌5月分。6月の手取りは住民税差だけを反映。':input.monthlyResidentMode==='manual'?'通知書などの入力月額。':input.monthlyResidentMode==='previous'?'入力した前年実績から概算。':'前年も同じ給与・賞与と仮定し、社会保険料も今回の年額から支援金を除いた額と仮定。')+'賞与が支給されない月の概算です。');
     para('年間', '所得税は2026年分、住民税は'+(input.residentMode==='manual'?'入力した年額を固定。':'東京23区の2027年度負担を概算。')+'社会保険は'+(input.socialMode==='manual'?'入力した年額を固定。':'9月の料率で月給分×12＋賞与分。')+'年内の料率変更や年末調整の還付時期は再現せず、実際の年間振込総額とは異なります。');
     para('賞与', '賞与ごとの振込額・源泉徴収額は算出しません。額面と社会保険料を年間に合算し、所得税は年間所得に対して計算します。1〜3月の賞与にも9月の固定料率を使用します。');
     para('グラフ', '賞与・その他条件を固定し、月給を変えて年収別の手取りを計算します。所得税の税率区分以外にも、基礎控除・保険料等級・住民税の判定・端数処理による段差があります。社会保険の加入・脱退の壁は対象外です。');
@@ -244,15 +291,23 @@
       annualParagraph(box,'指定された給与控除です。所得税・住民税の所得控除には含めません。');return;
     }
     if(key==='residentTax'){
-      annualParagraph(box,'通常月（2026年度）：'+yen(m.residentTax),'detail-formula');
-      if(m.residentDetail){const d=m.residentDetail;
+      annualParagraph(box,'通常月（'+(input.monthlyResidentMode==='annual'?'通知書の対象年度・7月〜翌5月':input.monthlyResidentMode==='manual'?'通知書の指定月額':'2026年度・概算')+'）：'+yen(m.residentTax),'detail-formula');
+      if(m.residentDetail?.notice){
+        residentAllocationDetails(box,m.residentDetail);
+      }else if(m.residentDetail){const d=m.residentDetail;
         annualParagraph(box,'2025年給与収入 '+yen(d.yearSalary)+' − 給与所得控除 → 給与所得 '+yen(d.income)+'。社会保険料 '+yen(d.yearSocial)+'・基礎控除 '+yen(d.basic)+'を控除 → 課税所得 '+yen(d.taxable)+'.');
         annualParagraph(box,'2026年度年額 '+yen(d.annual)+'。6月 '+yen(d.june)+'、7月〜翌5月 各'+yen(d.monthly)+'。');
         if(input.monthlyResidentMode==='estimate')annualParagraph(box,'前年も同じ給与・賞与、前年保険料は今回の年間自動概算から子ども・子育て支援金を除いた額と仮定しています。');
       }else annualParagraph(box,'通知書などの入力月額を使用。通常月の自動計算は行いません。');
       const d=r.resident;
       annualParagraph(box,'年間手取りに使う住民税：'+yen(d.annual),'detail-subtitle');
-      if(d.manual)annualParagraph(box,'入力した年額を固定しています。通常月の住民税は別設定です。');
+      if(d.manual){
+        annualParagraph(box,'通知書などの入力年額を固定しています。2027年度の予測額ではありません。');
+        if(input.monthlyResidentMode!=='annual'){
+          residentAllocationDetails(box,P.residentInstallments(d.annual,input.residentCollectionMode));
+          annualParagraph(box,input.monthlyResidentMode==='manual'?'通常月は通知書の指定月額を優先。年額からの配分は参考です。':'通常月は別の概算設定を使用中です。年額からの配分は参考です。');
+        }
+      }
       else{
         annualParagraph(box,'給与所得 '+yen(r.income)+' − 社会保険料 '+yen(r.social.annual)+' − 基礎控除 '+yen(d.basic)+' → 課税所得 '+yen(d.taxable),'detail-step');
         annualParagraph(box,'所得割 '+yen(d.ward+d.metro)+' ＋ 均等割・森林環境税 '+yen(d.flat)+' ＝ '+yen(d.annual),'detail-formula');
@@ -483,6 +538,7 @@
       document.querySelectorAll('#simBracketRows input').forEach(e=>e.removeAttribute('aria-invalid'));
       renderSummary(lastComparison);renderComparison(lastComparison);renderTax(lastComparison);renderIncomeTable();drawGraph();
     } catch(error) {
+      el('residentSchedule').hidden=true;el('residentJunePay').hidden=true;
       allValid=false;lastComparison=null;el('simError').textContent=error.message+' 正しい条件になるまで、結果の更新と保存を停止しています。';el('simError').hidden=false;el('simRoot').classList.add('sim-invalid');
       el('simTooltip').hidden=true;
       el('simEditorError').textContent=error.message;el('simEditorError').hidden=false;
@@ -502,7 +558,7 @@
   function download(contents,type,filename) {
     const blob=new Blob([contents],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   }
-  function documentForExport() {return {format:'nenshu-no-kabe',version:2,checkedAt:'2026-09-09',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
+  function documentForExport() {return {format:'nenshu-no-kabe',version:3,checkedAt:'2026-09-09',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
 
   // A shortcut opens the optional editor explicitly; collapsing never resets a policy.
   document.querySelectorAll('[data-sim-open-editor]').forEach(link=>link.addEventListener('click',e=>{
@@ -517,9 +573,9 @@
   el('simConditions').addEventListener('submit',e=>e.preventDefault());
   el('simConditions').addEventListener('input',e=>{
     if(e.target.id==='monthlySlider')el('monthlyGross').value=number('monthlySlider');
-    readConditions();growRange();scheduleUpdate();
+    syncResidentSelection(e.target.id);readConditions();growRange();scheduleUpdate();
   });
-  el('simConditions').addEventListener('change',()=>{readConditions();growRange();scheduleUpdate();});
+  el('simConditions').addEventListener('change',e=>{syncResidentSelection(e.target.id);readConditions();growRange();scheduleUpdate();});
   el('bonusRows').addEventListener('click',e=>{
     const button=e.target.closest('[data-remove-bonus]');if(!button)return;
     readConditions();input.bonuses.splice(+button.dataset.removeBonus,1);input.annualGross=P.annualGross(input);renderBonusRows();growRange();update();el('addBonus').focus({preventScroll:true});
@@ -578,7 +634,7 @@
       if(file.size>200000)throw new Error('設定ファイルは200KB以下にしてください。');
       const doc=P.validateDocument(JSON.parse(await file.text()));
       input=doc.input;policy=doc.policy;graphMax=doc.graphMax;selected=0;history=[P.currentPolicy()];commit();
-      populateConditions();renderEditor();syncBasic();update();notify(doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':'設定を読み込みました。');
+      populateConditions();renderEditor();syncBasic();update();notify(doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':doc.residentLegacy?'旧設定の年額・月額を別々に保持しました。月額を連動するには「通知書の年額から算出」を選んでください。':'設定を読み込みました。');
     } catch(error){notify('読み込みできません：'+error.message);}
     el('simFile').value='';
   });
@@ -587,8 +643,8 @@
     const data=[...getChartData()];
     if(!data.some(c=>c.gross===input.annualGross))data.push({gross:input.annualGross,...P.compare(input,policy)});
     data.sort((a,b)=>a.gross-b.gross);
-    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）'];
-    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable]);
+    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）','住民税年額の根拠','通常月住民税（円）','住民税月額の根拠','通知書配分6月（参考・円）','通知書配分7月〜翌5月（参考・円）'];
+    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable,input.residentMode==='manual'?'通知書等の対象年度・固定年額':'2027年度予測',c.current.monthly.residentTax,monthlyResidentLabel(),input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).june:'',input.residentMode==='manual'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).monthly:'']);
     download('\uFEFF'+[header,...rows].map(row=>row.join(',')).join('\r\n'),'text/csv;charset=utf-8','nenshu-no-kabe-comparison.csv');
   });
   el('copyButton').addEventListener('click',async()=>{
@@ -597,11 +653,13 @@
     const lines=['年収の壁｜試算（2026-09-09）','月給（額面）：'+yen(input.monthlyGross),
       ...input.bonuses.map((bonus,i)=>'賞与'+(i+1)+'（'+bonus.month+'月）：'+yen(bonus.gross)),
       '額面年収：'+yen(a.gross)+'（月給×12＋賞与）','通常月の手取り：'+yen(a.monthly.net),
+      '通常月の住民税：'+yen(a.monthly.residentTax)+'（'+monthlyResidentLabel()+'）',
+      ...(a.monthly.residentDetail?.notice?['6月の住民税：'+yen(a.monthly.residentDetail.june),'6月の手取り（住民税差のみ）：'+yen(a.monthly.net+a.monthly.residentTax-a.monthly.residentDetail.june)]:[]),
       '年間の手取り：'+yen(a.net),'月平均：'+yen(a.net/12)+'（年間手取り÷12）',
       '加入支部：'+input.prefecture+'／年齢：'+input.age+'歳',
       '年間社会保険料：'+yen(a.social.annual),'年間所得税等：'+yen(a.national.annual),'年間住民税等：'+yen(a.resident.annual),
       ...(hasPolicyChange()?['変更後の年間手取り：'+yen(b.net),'年間手取り増減：'+signed(lastComparison.delta)]:[]),
-      '通常月は現行の源泉徴収・2026年度住民税。年間は2026年分所得税・2027年度住民税（または指定年額）・9月の社会保険料率。実際の年間振込総額ではありません。'];
+      '所得税は2026年分、社会保険は9月の固定料率。年間住民税は'+(input.residentMode==='manual'?'通知書等の対象年度の入力年額（2027年度の予測ではない）。':'2027年度の予測額。')+'実際の年間振込総額ではありません。'];
     const text=lines.join('\n');
     try{await navigator.clipboard.writeText(text);notify('計算条件と結果をコピーしました。');}
     catch{const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.left='-9999px';document.body.append(area);area.select();const ok=document.execCommand('copy');area.remove();notify(ok?'計算条件と結果をコピーしました。':'コピーできませんでした。ブラウザの権限を確認してください。');}
