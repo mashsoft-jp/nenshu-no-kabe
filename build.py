@@ -5,7 +5,7 @@ import re
 ROOT=Path(__file__).resolve().parent
 css='\n'.join((ROOT/n).read_text(encoding='utf-8') for n in ['base.css','policy.css','unified.css','rate-chart.css'])
 view=(ROOT/'unified-view.html').read_text(encoding='utf-8')
-scripts='\n'.join('<script>\n'+(ROOT/n).read_text(encoding='utf-8')+'\n</script>' for n in ['monthly-engine.js','policy-engine.js','unified-engine.js','unified-ui.js','rate-chart.js'])
+scripts='\n'.join('<script>\n'+(ROOT/n).read_text(encoding='utf-8')+'\n</script>' for n in ['monthly-engine.js','policy-engine.js','deduction-engine.js','unified-engine.js','unified-ui.js','rate-chart.js'])
 html='''<!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="description" content="月給×12＋賞与から年収と手取りを計算。通常月と年間の内訳・計算式を同じページに表示。所得税の仮想変更に対応。"><title>年収の壁</title><style>'''+css+'''</style></head><body class="policy-mode">
 <noscript>計算にはJavaScriptを有効にしてください。入力値はサーバーに送信されません。</noscript>

@@ -4,9 +4,9 @@
  * Bonus bases: https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20141203.html
  */
 (function(root,factory){
-  if(typeof module==='object'&&module.exports)module.exports=factory(require('./monthly-engine.js'),require('./policy-engine.js'));
-  else root.Nenshu=factory(Tedori,root.TedoriPolicy);
-})(typeof globalThis!=='undefined'?globalThis:this,function(Monthly,Base){
+  if(typeof module==='object'&&module.exports)module.exports=factory(require('./monthly-engine.js'),require('./policy-engine.js'),require('./deduction-engine.js'));
+  else root.Nenshu=factory(Tedori,root.TedoriPolicy,root.NenshuDeductions);
+})(typeof globalThis!=='undefined'?globalThis:this,function(Monthly,Base,Deductions){
   'use strict';
   const MAX_MONTHLY=8333333, MIN_MONTHLY=80000;
   const keys=['health','care','pension','child','employment'];
@@ -16,9 +16,64 @@
     if(!Number.isSafeInteger(v)||v<min||v>max)throw new Error(`${label}は${min.toLocaleString('ja-JP')}〜${max.toLocaleString('ja-JP')}の整数で入力してください。`);
     return v;
   };
+  // Qualified domestic relatives only; additional family deductions are handled by deduction-engine.js.
+  // Sources, income-year distinctions and units: docs/DEPENDENTS.md.
+  const dependentKeys=['under16','young','specific','adult','elderly','cohabiting'];
+  const emptyDependents=()=>Object.fromEntries(dependentKeys.map(k=>[k,0]));
+  function validateDependents(d){
+    if(!d||typeof d!=='object'||Array.isArray(d)||Object.keys(d).some(k=>!dependentKeys.includes(k)))throw new Error('扶養区分の形式が不正です。');
+    dependentKeys.forEach(k=>integer(d[k],0,10,'扶養人数'));
+    integer(sum(d),0,10,'扶養人数の合計');return d;
+  }
+  function dependentAmounts(d){
+    validateDependents(d);
+    const general=d.young+d.adult;
+    return {count:sum(d),withholding:sum(d)-d.under16,under23:d.under16+d.young+d.specific,
+      national:general*380000+d.specific*630000+d.elderly*480000+d.cohabiting*580000,
+      resident:general*330000+d.specific*450000+d.elderly*380000+d.cohabiting*450000,
+      difference:general*50000+d.specific*180000+d.elderly*100000+d.cohabiting*130000};
+  }
+  const withholdingCount=x=>x.withholdingDependentMode==='manual'?x.withholdingDependents:dependentAmounts(x.dependents).withholding+Deductions.monthlyCount(x.taxConditions,
+    salaryIncome2025(x.annualGross-x.nonTax*12)-salaryAdjustment(x.annualGross-x.nonTax*12,x.dependents,x.taxConditions,2025));
+  const previousTaxConditions=x=>x.previousTaxMode==='same'?x.taxConditions:x.previousTaxConditions;
+  const previousFamily=x=>x.previousDependentMode==='same'?x.dependents:x.previousDependents;
+  // One deduction per taxpayer, not per child. Round fractional yen UP (NTA No.1411).
+  const salaryAdjustment=(gross,d,t=Deductions.defaults(),year=2026)=>(dependentAmounts(d).under23>0||Deductions.adjustmentEligible(t,year))?Math.ceil(Math.max(0,Math.min(gross,10000000)-8500000)/10):0;
+  function familyResidentTax(income,social,d,t=Deductions.defaults(),year=2026){
+    const f=dependentAmounts(d),extra=Deductions.amounts(t,income,year),count=f.count+extra.spouse.count;
+    // Preserve the existing zero-family calculation when no resident conditions change.
+    if(!count&&!extra.resident&&!extra.exempt&&!t.wardCredit&&!t.metroCredit&&!t.wardOneStopCredit&&!t.metroOneStopCredit)return {...Base.residentTax(income,social),dependentDeduction:0,dependentCount:0,extra,wardCredit:0,metroCredit:0,wardOneStopCredit:0,metroOneStopCredit:0};
+    const basic=income<=24000000?430000:income<=24500000?290000:income<=25000000?150000:0;
+    const taxable=Math.max(0,Math.floor((income-social-basic-f.resident-extra.resident)/1000)*1000);
+    const flatLimit=count?350000*(1+count)+310000:450000,incomeLimit=count?350000*(1+count)+420000:450000;
+    const flat=income<=flatLimit||extra.exempt?0:5000;
+    const difference=50000+f.difference+extra.difference;
+    const adjustmentBase=income>25000000?0:taxable<=2000000?Math.min(difference,taxable):Math.max(50000,difference-(taxable-2000000));
+    // Numerators are hundredths of a yen until the final per-levy 100-yen floor.
+    let ward=Math.max(0,taxable*6-adjustmentBase*3),metro=Math.max(0,taxable*4-adjustmentBase*2);
+    if(income<=incomeLimit||extra.exempt){ward=0;metro=0;}
+    const wardCredit=Math.min(ward,t.wardCredit*100),metroCredit=Math.min(metro,t.metroCredit*100);
+    ward-=wardCredit;metro-=metroCredit;
+    // Income-levy adjustment: tax must not reduce income below its exemption threshold.
+    const total=ward+metro,reduction=Math.max(0,total-Math.max(0,income-incomeLimit)*100);
+    // Allocate relief by the ACTUAL remaining levies, which may differ from 3:2 after credits.
+    // Keep rational hundredths of yen with BigInt through the final 100-yen floor.
+    const denominator=BigInt(total||1),remaining=BigInt(total-reduction);
+    const levy=(value,oneStop)=>{
+      const numerator=BigInt(value)*remaining,credit=BigInt(oneStop)*100n*denominator;
+      const used=credit<numerator?credit:numerator;
+      return {tax:Number((numerator-used)/(denominator*10000n))*100,oneStop:Number(used)/Number(denominator)/100};
+    };
+    const w=levy(ward,t.wardOneStopCredit),m=levy(metro,t.metroOneStopCredit);ward=w.tax;metro=m.tax;
+    return {annual:ward+metro+flat,taxable,basic,ward,metro,flat,adjustment:adjustmentBase*0.05,
+      dependentDeduction:f.resident,dependentCount:count,flatLimit,incomeLimit,extra,wardCredit:wardCredit/100,metroCredit:metroCredit/100,wardOneStopCredit:w.oneStop,metroOneStopCredit:m.oneStop};
+  }
   const bonusTotal=x=>x.bonuses.reduce((a,b)=>a+b.gross,0);
   const annualGross=x=>x.monthlyGross*12+bonusTotal(x);
   function defaultInput(){return {
+    taxConditions:Deductions.defaults(),previousTaxConditions:Deductions.defaults(),previousTaxMode:'same',
+    dependents:emptyDependents(),previousDependents:emptyDependents(),previousDependentMode:'same',
+    withholdingDependentMode:'same',withholdingDependents:0,
     monthlyGross:500000,annualGross:6000000,bonuses:[],nonTax:0,age:30,prefecture:'東京都',employment:50,
     standardMode:'auto',healthStandard:500000,pensionStandard:500000,priorBonusStandard:0,
     socialMode:'auto',socialAnnual:881400,residentMode:'estimate',residentAnnual:307200,
@@ -26,6 +81,20 @@
   };}
   function validateInput(x){
     if(!x||typeof x!=='object')throw new Error('給与条件がありません。');
+    validateDependents(x.dependents);validateDependents(x.previousDependents);
+    Deductions.validate(x.taxConditions);Deductions.validate(x.previousTaxConditions);
+    if(!['same','manual'].includes(x.previousTaxMode))throw new Error('前年の追加控除の設定方法が不正です。');
+    for(const [t,d,limit] of [[x.taxConditions,x.dependents,620000],...(x.previousTaxMode==='manual'?[[x.previousTaxConditions,previousFamily(x),580000]]:[])]){
+      if(t.disabledGeneral+t.disabledSpecial+t.disabledCohabiting>dependentAmounts(d).count)throw new Error('障害者の扶養人数は、入力した扶養親族の人数以下にしてください。');
+      if(t.specialIncomes.some(n=>n<=limit||n>1230000))throw new Error('特定親族の所得は'+limit.toLocaleString('ja-JP')+'円超〜1,230,000円です。低所得の親族は扶養人数に入力してください。');
+      if(t.specialIncomes.length+dependentAmounts(d).count>10)throw new Error('扶養親族と特定親族は合計10人までです。');
+      if(['father','mother','divorced'].includes(t.parent)&&!dependentAmounts(d).count)throw new Error('ひとり親・離婚後の寡婦は、要件を満たす子・扶養親族も入力してください。');
+    }
+    const pt=previousTaxConditions(x),pd=previousFamily(x);
+    if(pt.disabledGeneral+pt.disabledSpecial+pt.disabledCohabiting>dependentAmounts(pd).count)throw new Error('前年の障害者人数と扶養人数を確認してください。');
+    if(['father','mother','divorced'].includes(pt.parent)&&!dependentAmounts(pd).count)throw new Error('前年のひとり親・寡婦の扶養条件を確認してください。');
+    if(!['same','manual'].includes(x.previousDependentMode)||!['same','manual'].includes(x.withholdingDependentMode))throw new Error('扶養条件の設定方法が不正です。');
+    integer(x.withholdingDependents,0,40,'通常月の源泉徴収人数');
     integer(x.monthlyGross,MIN_MONTHLY,MAX_MONTHLY,'月給（円）');
     if(!Array.isArray(x.bonuses)||x.bonuses.length>3)throw new Error('賞与は年3回まで入力できます。年4回以上の支給はこのモデルの対象外です。');
     x.bonuses.forEach((b,i)=>{if(!b||typeof b!=='object')throw new Error('賞与の形式が不正です。');integer(b.month,1,12,`賞与${i+1}の支給月`);integer(b.gross,0,Base.MAX_GROSS,`賞与${i+1}の額面（円）`);});
@@ -94,8 +163,8 @@
     const monthly=collection==='june'?0:Math.floor(annual/1200)*100;
     return {annual,monthly,june:annual-monthly*11,collection};
   }
-  // FY2026 resident tax, based on 2025 earnings, same single/no-dependent scope.
-  function resident2025(gross,social){
+  // FY2026 resident tax, based on 2025 earnings and the separately chosen prior-year family.
+  function salaryIncome2025(gross){
     let income;
     if(gross<=650999)income=0;
     else if(gross<1900000)income=gross-650000;
@@ -103,11 +172,15 @@
     else if(gross<6600000)income=Math.floor(gross/4000)*3200-440000;
     else if(gross<8500000)income=Math.floor(gross*9/10)-1100000;
     else income=gross-1950000;
-    const r=Base.residentTax(income,social),monthly=Math.floor(r.annual/1200)*100;
-    return {...r,income,yearSalary:gross,yearSocial:social,monthly,june:r.annual-monthly*11};
+    return income;
+  }
+  function resident2025(gross,social,d=emptyDependents(),t=Deductions.defaults()){
+    const incomeAdjustment=salaryAdjustment(gross,d,t,2025),income=salaryIncome2025(gross)-incomeAdjustment;
+    const r=familyResidentTax(income,social,d,t,2025),monthly=Math.floor(r.annual/1200)*100;
+    return {...r,income,incomeAdjustment,yearSalary:gross,yearSocial:social,monthly,june:r.annual-monthly*11};
   }
   function monthlyResult(x,auto){
-    const withholding=Monthly.withholding(x.monthlyGross-x.nonTax-auto.monthlyTotal,0);
+    const withholding=Monthly.withholding(x.monthlyGross-x.nonTax-auto.monthlyTotal,withholdingCount(x));
     let residentDetail=null,resident;
     if(x.monthlyResidentMode==='manual')resident=x.residentMonthly;
     else if(x.monthlyResidentMode==='annual'){
@@ -117,7 +190,7 @@
     else{
       const previous=x.monthlyResidentMode==='previous';
       residentDetail=resident2025(previous?x.previousSalary:x.annualGross-x.nonTax*12,
-        previous?x.previousSocial:auto.annual-auto.parts.child);
+        previous?x.previousSocial:auto.annual-auto.parts.child,previousFamily(x),previousTaxConditions(x));
       resident=residentDetail.monthly;
     }
     const deductions=auto.monthlyTotal+withholding.tax+resident+x.other;
@@ -131,11 +204,14 @@
   function calculate(x,policy=Base.currentPolicy()){
     validateInput(x);Base.validatePolicy(policy);
     const auto=automaticSocial(x),social=x.socialMode==='manual'?{manual:true,annual:x.socialAnnual,parts:null,automatic:auto}:auto;
-    const taxableGross=x.annualGross-x.nonTax*12,income=Base.salaryIncome(taxableGross);
-    const national=Base.incomeTax(income,social.annual,policy);
-    const resident=x.residentMode==='manual'?{annual:x.residentAnnual,manual:true}:Base.residentTax(income,social.annual);
+    const taxableGross=x.annualGross-x.nonTax*12,salaryDeduction=taxableGross-Base.salaryIncome(taxableGross);
+    const incomeAdjustment=salaryAdjustment(taxableGross,x.dependents,x.taxConditions),income=Base.salaryIncome(taxableGross)-incomeAdjustment;
+    const dependentDeduction=dependentAmounts(x.dependents).national;
+    const extra=Deductions.amounts(x.taxConditions,income);
+    const national=Base.incomeTax(income,social.annual,policy,dependentDeduction,extra.national,extra.nationalCredit);
+    const resident=x.residentMode==='manual'?{annual:x.residentAnnual,manual:true}:familyResidentTax(income,social.annual,x.dependents,x.taxConditions);
     const other=x.other*12,deductions=social.annual+national.annual+resident.annual+other;
-    return {gross:x.annualGross,taxableGross,nonTax:x.nonTax*12,income,salaryDeduction:taxableGross-income,
+    return {gross:x.annualGross,taxableGross,extra,nonTax:x.nonTax*12,income,salaryDeduction,incomeAdjustment,
       bonusGross:bonusTotal(x),social,automaticSocial:auto,national,resident,other,deductions,
       net:x.annualGross-deductions,monthly:monthlyResult(x,auto)};
   }
@@ -150,16 +226,27 @@
     if(max<=min)return [atAnnual(x,min)];
     const bonus=bonusTotal(x);
     const shifted=Monthly.bands.flatMap(([v])=>[-12,0,12].map(d=>v*12+bonus+d));
-    const targets=Base.sampleSalaries(min,max,count,[x.annualGross,...shifted]);
+    const t=x.taxConditions,cliffs=[];
+    const incomeLimits=[...(t.spouseEligible?[9000000,9500000,10000000]:[]),...(t.parent!=='none'?[1350000,5000000]:[]),...(t.selfDisability!=='none'?[1350000]:[]),...(t.student?[890000]:[])];
+    const adjusted=dependentAmounts(x.dependents).under23>0||Deductions.adjustmentEligible(t,2026);
+    if(adjusted)incomeLimits.push(4890000,6550000,23500000,24000000,24500000,25000000);
+    // Locate the first attainable monthly salary ABOVE each income ceiling, keeping bonuses fixed.
+    for(const limit of incomeLimits){
+      let lo=Math.max(MIN_MONTHLY,x.nonTax),hi=Math.min(MAX_MONTHLY,Math.floor((max-bonus)/12));
+      while(lo<hi){const mid=Math.floor((lo+hi)/2),gross=mid*12+bonus-x.nonTax*12;
+        if(Base.salaryIncome(gross)-salaryAdjustment(gross,x.dependents,t)>limit)hi=mid;else lo=mid+1;}
+      for(const delta of [-12,0,12])cliffs.push(lo*12+bonus+delta);
+    }
+    const targets=Base.sampleSalaries(min,max,count,[x.annualGross,...shifted,...cliffs]);
     const unique=new Map();targets.forEach(g=>{const next=atAnnual(x,g);unique.set(next.annualGross,next);});
     return [...unique.values()].sort((a,b)=>a.annualGross-b.annualGross);
   }
   function validateDocument(doc){
-    let x,legacy=false,residentLegacy=false;
+    let x,legacy=false,residentLegacy=false,dependentLegacy=false,deductionLegacy=false;
     if(doc?.format==='tedori-policy'&&doc.version===1){
       const d=Base.validateDocument(doc);x={...defaultInput(),...d.input,monthlyGross:Math.floor(d.input.annualGross/12),bonuses:[]};
       x.annualGross=annualGross(x);legacy=true;
-    } else if(doc?.format==='nenshu-no-kabe'&&[2,3].includes(doc.version)){
+    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5].includes(doc.version)){
       x=Base.clone(doc.input);
       if(doc.version===2){
         // Preserve old annual/monthly independence, rather than changing saved results.
@@ -168,10 +255,16 @@
       }else if(!['split','june'].includes(x?.residentCollectionMode))throw new Error('住民税の徴収方法を含む設定JSONを選んでください。');
     }
     else throw new Error('このアプリで保存した設定JSONを選んでください。');
+    if(doc.version<4){
+      x.dependents=emptyDependents();x.previousDependents=emptyDependents();
+      x.previousDependentMode='same';x.withholdingDependentMode='same';x.withholdingDependents=0;dependentLegacy=true;
+    }
+    if(doc.version<5){x.taxConditions=Deductions.defaults();x.previousTaxConditions=Deductions.defaults();x.previousTaxMode='same';deductionLegacy=true;}
     validateInput(x);Base.validatePolicy(doc.policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
-    return {format:'nenshu-no-kabe',version:3,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy};
+    return {format:'nenshu-no-kabe',version:5,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
   }
   return {...Base,MAX_MONTHLY,MIN_MONTHLY,defaultInput,validateInput,bonusTotal,annualGross,
+    Deductions,previousTaxConditions,salaryIncome2025,dependentKeys,emptyDependents,dependentAmounts,withholdingCount,previousFamily,salaryAdjustment,familyResidentTax,
     automaticSocial,socialContributions,residentInstallments,resident2025,monthlyResult,calculate,compare,
     graphMinimum,atAnnual,sampleForInput,validateDocument};
 });

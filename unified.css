@@ -24,3 +24,12 @@ body.policy-mode #copyButton{display:inline-flex}
 .resident-schedule{border:1px solid var(--line);border-radius:9px;padding:12px;margin:0 0 17px;background:var(--bg);overflow-wrap:anywhere}
 .resident-schedule dl{margin:6px 0}.resident-schedule dl>div{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 10px;padding:4px 0;font-size:12px}.resident-schedule dt{color:var(--muted)}.resident-schedule dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums}
 .resident-june-pay{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}.resident-june-pay>span{display:block;font-size:11px;color:var(--muted)}.resident-june-pay>strong{display:block;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}.resident-june-pay>p{font-size:10px;color:var(--muted);line-height:1.7;margin-top:4px}
+
+/* Keep paired dependent count controls aligned when category labels wrap. */
+.dependent-fields{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+
+.tax-group{margin:12px 0;padding:8px 0;border-bottom:1px solid var(--line)}
+.tax-group summary{cursor:pointer;font-weight:600}
+.tax-group .sim-hint{margin:10px 0}
+
+.tax-group input[type=text]{width:100%;min-width:0;min-height:39px;font-size:13px;padding:8px 10px;border:1px solid #36485e;border-radius:10px;background:#0e1622;color:var(--text)}

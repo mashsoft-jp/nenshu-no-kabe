@@ -79,3 +79,8 @@ console.log(`PASS ${checks} unified engine checks`);
 
 // Run notice allocation regressions in the existing CI entry point.
 require('./test-resident-notice.cjs');
+
+// Qualified dependent regressions run through the existing CI entry point.
+require('./test-dependents.cjs');
+
+require('./test-deductions.cjs');
