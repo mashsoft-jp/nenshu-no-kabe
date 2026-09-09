@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Assemble a self-contained HTML file. No network dependencies or build packages."""
+from pathlib import Path
+import re
+ROOT=Path(__file__).resolve().parent
+css='\n'.join((ROOT/n).read_text(encoding='utf-8') for n in ['base.css','policy.css','unified.css'])
+view=(ROOT/'unified-view.html').read_text(encoding='utf-8')
+scripts='\n'.join('<script>\n'+(ROOT/n).read_text(encoding='utf-8')+'\n</script>' for n in ['monthly-engine.js','policy-engine.js','unified-engine.js','unified-ui.js'])
+html='''<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="description" content="月給×12＋賞与から年収と手取りを計算。通常月と年間の内訳・計算式を同じページに表示。所得税の仮想変更に対応。"><title>年収の壁</title><style>'''+css+'''</style></head><body class="policy-mode">
+<noscript>計算にはJavaScriptを有効にしてください。入力値はサーバーに送信されません。</noscript>
+<header><div class="shell"><div class="logo"><span class="logo-icon" aria-hidden="true"><i></i><i></i><i></i></span>年収の壁</div><div class="header-right"><span class="badge green">入力データの送信なし</span><button class="ghost" id="copyButton" type="button">結果をコピー</button></div></div></header>
+'''+view+'''<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>'''+scripts+'''</body></html>'''
+(ROOT/'index.html').write_text(html,encoding='utf-8')
+print(f'Built {ROOT / "index.html"} ({len(html.encode()):,} bytes)')
