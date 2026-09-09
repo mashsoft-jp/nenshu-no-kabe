@@ -1,0 +1,148 @@
+<main id="policyView" aria-labelledby="policyTitle">
+<div class="sim-shell" id="simRoot">
+  <div class="sim-hero">
+    <div><h1 id="policyTitle">手取り計算</h1><p class="sim-lead">月給・賞与から、通常月と年間の手取り額を計算します。</p>
+    <div class="sim-meta"><span class="badge">制度確認 2026.09.09</span><span class="badge">協会けんぽ</span><span class="badge amber">条件付きの概算</span><span class="badge">20〜64歳・扶養なし</span></div></div>
+    <div class="sim-actions"><button id="simSave" type="button">設定を保存</button><button id="simLoad" type="button">設定を読み込む</button><input id="simFile" type="file" accept=".json,application/json" hidden></div>
+  </div>
+  <div id="simError" class="sim-error" role="alert" hidden></div>
+  <div class="sim-layout">
+    <aside class="sim-sidebar" aria-label="給与条件">
+      <section class="sim-card input-card">
+        <div class="sim-card-title"><h2>給与条件</h2><button id="simResetInputs" type="button" class="sim-link-button">初期値に戻す</button></div>
+        <form id="simConditions" novalidate>
+          <div class="sim-field"><label for="monthlyGross">月給（額面・手当込み）</label><div class="sim-input-unit sim-income-input"><input id="monthlyGross" type="number" value="500000" min="80000" max="8333333" step="1" inputmode="numeric" aria-describedby="monthlyGrossHint"><span>円</span></div>
+          <input id="monthlySlider" type="range" min="80000" max="2000000" step="1000" value="500000" aria-label="月給の調整"><div class="sim-income-caption"><span>8万円</span><span>200万円</span></div>
+          <div class="sim-presets"><button type="button" data-monthly="250000">25万円</button><button type="button" data-monthly="300000">30万円</button><button type="button" data-monthly="400000">40万円</button><button type="button" data-monthly="500000">50万円</button></div>
+          <p class="sim-hint" id="monthlyGrossHint">毎月同額の給与を想定。賞与は下に入力します。</p></div>
+          <div class="bonus-section"><div class="bonus-heading"><label>賞与（任意・額面）</label><button type="button" id="addBonus">＋ 賞与を追加</button></div>
+          <div id="bonusRows"></div><p id="bonusEmpty" class="sim-hint">賞与なし</p><div id="bonusTotalWrap" class="bonus-total" hidden><span>賞与合計</span><strong id="bonusTotal">0円</strong></div>
+          <p class="sim-hint" id="bonusLimitHint" hidden>支給月・金額を年3回まで入力できます。</p>
+          <div class="sim-field prior-bonus" id="priorBonusWrap" hidden><label for="priorBonusStandard">前年4〜12月の標準賞与累計額（健康保険・円）</label><input id="priorBonusStandard" type="number" min="0" max="5730000" step="1000" value="0" inputmode="numeric"><p class="sim-hint">1〜3月支給分の上限判定に使用。初期値は0円です。当年の額面年収には加算しません。</p></div></div>
+          <div class="gross-total-box"><span>額面年収</span><output id="derivedAnnualGross" for="monthlyGross">—</output><p id="grossFormula">月給 × 12 ＋ 賞与合計</p><p id="nonTaxAnnualHint" hidden></p></div>
+          <div class="sim-fields-two"><div class="sim-field"><label for="simPrefecture">協会けんぽの加入支部</label><select id="simPrefecture"></select></div><div class="sim-field"><label for="simAge">年齢</label><input id="simAge" type="number" min="20" max="64" step="1" value="30" inputmode="numeric"></div></div>
+          <details class="sim-conditions" id="advancedConditions"><summary>詳細条件</summary><div class="sim-inner">
+            <p class="sim-hint">社会保険加入済み・配偶者と扶養親族なしのモデルです。賞与以外の所得や各種所得控除は含めません。</p>
+            <div class="sim-field"><label for="simEmployment">雇用保険の本人負担</label><select id="simEmployment"><option value="50">一般の事業：0.5%</option><option value="60">農林水産・清酒製造・建設：0.6%</option><option value="0">加入対象外：計算しない</option></select></div>
+            <div class="sim-field"><label for="nonTax">月給に含む非課税通勤手当（円）</label><input id="nonTax" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"></div>
+            <div class="sim-field"><label for="standardMode">標準報酬月額</label><select id="standardMode"><option value="auto">入力した月給から等級を仮置き</option><option value="manual">決定済みの等級を指定</option></select></div>
+            <div id="standardManualWrap" hidden><div class="sim-field"><label for="healthStandard">健康保険の標準報酬月額</label><select id="healthStandard"></select></div><div class="sim-field"><label for="pensionStandard">厚生年金の標準報酬月額</label><select id="pensionStandard"></select></div></div>
+            <div class="sim-field"><label for="monthlyResidentMode">通常月の住民税（2026年度）</label><select id="monthlyResidentMode"><option value="estimate">前年も同じ給与・賞与として概算</option><option value="previous">前年の給与・保険料から概算</option><option value="manual">通知書の月額を入力</option></select><p class="sim-hint">自動概算は東京23区・前年扶養なし。他の自治体は通知書月額を指定してください。</p></div>
+            <div id="previousWrap" hidden><div class="sim-field"><label for="previousSalary">2025年の給与収入（賞与込み・非課税分を除く円）</label><input id="previousSalary" type="number" min="0" max="100000000" value="6000000" step="1" inputmode="numeric"></div><div class="sim-field"><label for="previousSocial">2025年に支払った社会保険料（円）</label><input id="previousSocial" type="number" min="0" max="50000000" value="867600" step="1" inputmode="numeric"></div></div>
+            <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"></div>
+            <div class="sim-field"><label for="simResidentMode">年間手取りに使う住民税</label><select id="simResidentMode"><option value="estimate">2027年度の負担を東京23区で概算</option><option value="manual">通知書などの年額を入力・固定</option></select><p class="sim-hint">通常月の住民税とは対象年度が異なります。</p></div>
+            <div class="sim-field" id="simResidentManualWrap" hidden><label for="simResidentAnnual">年間の住民税等（円）</label><input id="simResidentAnnual" type="number" min="0" max="50000000" step="1" value="307200" inputmode="numeric"></div>
+            <div class="sim-field"><label for="simSocialMode">年間手取りに使う社会保険料</label><select id="simSocialMode"><option value="auto">月給分×12＋賞与分で概算</option><option value="manual">本人負担の年額を入力・固定</option></select></div>
+            <div class="sim-field" id="simSocialManualWrap" hidden><label for="simSocialAnnual">年間社会保険料（円）</label><input id="simSocialAnnual" type="number" min="0" max="50000000" step="1" value="881400" inputmode="numeric"><p class="sim-hint">年間手取りのみ上書きします。通常月は月給・等級から計算します。</p></div>
+            <div class="sim-field"><label for="otherDeduction">その他の給与控除（月額・円）</label><input id="otherDeduction" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"><p class="sim-hint">年額は月額×12。所得控除には含めません。</p></div>
+          </div></details>
+        </form>
+        <a href="#simResults" class="sim-mobile-jump">手取り額へ移動 ↓</a>
+      </section>
+    </aside>
+    <div class="sim-results" id="simResults">
+      <section class="sim-card sim-summary sim-live unified-summary" aria-labelledby="simResultHeading">
+        <div class="unified-summary-heading"><h2 id="simResultHeading">手取り額</h2><span class="badge green">現行制度</span></div>
+        <div class="pay-pair">
+          <div class="pay-box"><h3>通常月</h3><div class="pay-amount"><strong id="monthlyNet" aria-live="polite" aria-atomic="true">—</strong><span>／月</span></div><p>賞与を含まない月・源泉徴収後</p><p id="monthlyNetRate" class="pay-meta">—</p></div>
+          <div class="pay-box annual-pay"><h3>年間（賞与込み）</h3><div class="pay-amount"><strong id="simCurrentNet" aria-live="polite" aria-atomic="true">—</strong><span>／年</span></div><p id="simCurrentMonthly">—</p><p id="annualNetRate" class="pay-meta">—</p></div>
+        </div>
+        <div class="pay-components"><div><span>月給 × 12</span><strong id="salaryAnnual">—</strong></div><span>＋</span><div><span>賞与合計</span><strong id="summaryBonus">—</strong></div><span>＝</span><div><span>額面年収</span><strong id="summaryGross">—</strong></div></div>
+        <div id="simPolicyComparison" hidden>
+          <div class="sim-comparison-heading"><span>所得税を変更した場合</span><span class="badge" id="simChangeStatus">現行と同じ設定</span></div>
+          <div class="sim-compare-values"><div><span>変更後の年間手取り</span><strong id="simChangedNet" class="sim-changed-net">—</strong><small id="simChangedMonthly">—</small></div><div><span>現行制度からの増減／年</span><strong id="simDelta" aria-live="polite" aria-atomic="true">0円</strong><small id="simDeltaMonthly">—</small></div></div>
+          <p id="simEqualHint" class="sim-empty-state">この年収では差額がありません。</p>
+          <p class="sim-footnote comparison-scope">変更は年間の所得税に反映します。通常月の源泉徴収額は現行制度のままです。</p>
+        </div>
+        <p class="sim-summary-bottom">通常月と年間の計算方法は異なります。年間は2026年分の所得税・翌年度の住民税・9月の社会保険料率による概算で、実際の年間振込総額ではありません。</p>
+      </section>
+      <section class="sim-card sim-live" aria-labelledby="simBreakdownHeading">
+        <div class="sim-card-title"><h2 id="simBreakdownHeading">内訳</h2><span class="sim-locked">本人負担</span></div>
+        <div class="breakdown-bars"><div><div class="bar-caption"><span>通常月</span><span id="monthlyBarLabel">—</span></div><div id="monthlyBar" class="stacked" role="img" aria-label="通常月の内訳"></div></div><div><div class="bar-caption"><span>年間（賞与込み）</span><span id="annualBarLabel">—</span></div><div id="annualBar" class="stacked" role="img" aria-label="年間の内訳"></div></div></div>
+        <p class="detail-guide">各項目の「詳細」で月給分・賞与分の計算を確認できます。</p>
+        <div class="sim-table-wrap"><table class="sim-table unified-breakdown"><thead><tr><th scope="col">項目</th><th scope="col">通常月</th><th scope="col">年間<span>賞与込み</span></th><th scope="col" class="policy-col" hidden>変更後<span>年間</span></th></tr></thead><tbody id="simComparisonBody"></tbody></table></div>
+        <p class="sim-footnote">月額の所得税は源泉徴収額、年額は年間所得から計算した税額です。住民税も対象年度が異なるため、年額は月額×12とは一致しません。</p>
+        <p class="sim-footnote" id="bonusSummaryNote" hidden></p>
+      </section>
+      <details class="sim-card sim-tax-options" id="simEditor">
+<summary id="simEditorSummary">
+<span class="sim-options-label"><span class="sim-options-title"><span class="sim-locked">オプション</span><span>所得税の変更</span></span><span class="sim-options-description" id="simOptionDescription">税率・課税所得の上限・段階数・基礎控除を変更できます。</span></span>
+<span class="badge" id="simOptionState">未変更</span>
+</summary>
+<div class="sim-editor-content">
+<div class="sim-editor-main">
+<div class="sim-card-title"><h2>税率設定（仮想制度）</h2><span class="badge green" id="simStageBadge">7段階</span></div>
+<div class="sim-editor-help"><strong>税率の区分は課税所得が基準です。</strong><br/>給与から控除を差し引いた所得に、区間ごとの税率を適用します。</div>
+<p class="sim-hint" style="margin-bottom:8px">変更例（仮想制度）</p>
+<div class="sim-example-buttons"><button id="simExampleThreshold" type="button">195万 → 300万円</button><button id="simExampleRate" type="button">全区分 −1ポイント</button><button id="simExampleZero" type="button">0%の段階を追加</button></div>
+<div class="sim-editor-head"><span>段</span><span>課税所得の上限（万円）</span><span>税率（%）</span><span>分割／削除</span></div>
+<div id="simBracketRows"></div><div class="sim-error" hidden="" id="simEditorError" role="status" style="margin:12px 0 0;font-size:11px"></div>
+</div>
+<div class="sim-editor-side">
+<div class="sim-selected-editor">
+<h3 id="simSelectedTitle">第1段階の設定</h3>
+<div id="simBoundarySliderWrap"><label class="sim-slider-title" for="simBoundarySlider">上限額 <output id="simBoundaryValue"></output></label><input aria-label="選択した段階の課税所得上限" id="simBoundarySlider" step="1000" type="range"/></div>
+<label class="sim-slider-title" for="simRateSlider">税率 <output id="simRateValue"></output></label><input aria-label="選択した段階の税率" id="simRateSlider" max="10000" min="0" step="10" type="range"/>
+</div>
+<div class="sim-editor-footer"><button id="simUndo" type="button">1つ前に戻す</button><button id="simRestore" type="button">税率・控除を現行に戻す</button></div>
+<p class="sim-footnote">＋でその段階を二分割、−で段階を削除。最後は常に上限なし。1〜20段階・税率0〜100%に対応。</p>
+<details class="sim-more" id="simBasicDetails"><summary>基礎控除の変更</summary><div class="sim-inner">
+<div class="sim-field"><label for="simBasicMode">所得税の基礎控除</label><select id="simBasicMode"><option value="current">2026年分の現行制度のまま</option><option value="add">現行の各控除額に一律加算・減算</option><option value="flat">全所得帯で一律の額に変更</option></select></div>
+<div class="sim-field" hidden="" id="simBasicAmountWrap"><label for="simBasicAmount" id="simBasicAmountLabel">控除の変更額（万円）</label><input id="simBasicAmount" inputmode="decimal" max="1000" min="-1000" step="0.1" type="number" value="0"/></div>
+<p class="sim-hint" id="simBasicNote">現行は合計所得489万円以下で104万円、655万円以下で67万円など、所得に応じて変わります。</p>
+<p class="sim-hint" style="margin-top:9px">給与所得控除・住民税の制度は変えません。社会保険料控除もあるため、「基礎控除＋74万円」が全員の課税開始年収になるわけではありません。</p>
+</div></details>
+<details class="sim-more"><summary>現行税率（編集不可）</summary><div class="sim-inner" id="simCurrentReference"></div></details>
+<p class="sim-footnote">閉じても設定は保持されます。取り消す場合は「税率・控除を現行に戻す」を押してください。</p>
+<a class="sim-results-return" href="#simResults">手取りの結果へ戻る ↑</a>
+</div>
+</div>
+</details>
+      <section aria-labelledby="simGraphHeading" class="sim-card sim-live">
+<div class="sim-chart-heading"><h2 id="simGraphHeading">年収と手取りの関係</h2><div class="sim-chart-range"><label for="simGraphMax">表示上限</label><select id="simGraphMax"><option value="3000000">300万円</option><option value="6000000">600万円</option><option selected="" value="12000000">1,200万円</option><option value="30000000">3,000万円</option><option value="60000000">6,000万円</option><option value="100000000">1億円</option></select></div></div>
+<div aria-label="制度比較グラフ" class="sim-chart-modes" role="tablist"><button aria-controls="simGraphPanel" aria-selected="true" data-sim-chart="net" id="simGraphNetTab" role="tab" type="button">年収 × 手取り</button><button aria-controls="simGraphPanel" aria-selected="false" data-sim-chart="delta" id="simGraphDeltaTab" role="tab" tabindex="-1" type="button">年収 × 増減額</button><button aria-controls="simGraphPanel" aria-selected="false" data-sim-chart="rates" id="simGraphRatesTab" role="tab" tabindex="-1" type="button">税率の段階</button></div>
+<div class="sim-chart-legend"><div class="sim-legend-series"><span class="sim-series-label"><i class="sim-series-line current"></i>現行制度</span><span class="sim-series-label"><i class="sim-series-line"></i>仮想制度</span></div><span id="simGraphLegendRight">同じ給与・保険条件で比較</span></div>
+<div aria-labelledby="simGraphNetTab" id="simGraphPanel" role="tabpanel"><div class="sim-plot"><svg aria-label="額面年収別の手取り比較グラフ" id="simGraph" role="img" tabindex="0" viewBox="0 0 850 345"></svg><div class="sim-tooltip" hidden="" id="simTooltip"></div></div></div>
+<p class="sim-plot-footer" id="simGraphHint">グラフをタップすると、その年収の結果に切り替わります。キーボードの左右キーは年収を1万円ずつ変更。</p>
+<div class="sim-next-step"><p>月給が1,000円増えた場合の<br/><strong style="font-size:12px;font-weight:600;color:var(--text)">年間手取り増減</strong></p><div>現行制度の手取り増減<strong id="simNextCurrent">—</strong></div><div>仮想制度の手取り増減<strong id="simNextChanged">—</strong></div></div>
+</section>
+      <details class="sim-card sim-live"><summary>計算条件の補足</summary><div class="sim-inner sim-note" id="simModelNote"></div></details>
+      <section class="sim-card sim-live"><details id="simIncomeTableDetails"><summary>年収別の比較表・CSV出力</summary><div class="sim-inner"><div class="sim-table-wrap"><table class="sim-table"><thead><tr><th>額面年収</th><th>現行の手取り</th><th>仮想の手取り</th><th>増減</th></tr></thead><tbody id="simIncomeTableBody"></tbody></table></div><p class="sim-footnote">賞与を固定し、代表年収を1円単位の月給に換算（端数切捨て）して計算。CSVには月給・賞与合計・実際の計算年収・社会保険等の内訳を含みます。</p><button class="sim-no-export" id="simCSV" style="margin-top:12px;font-size:11px" type="button">比較データをCSVで保存</button></div></details></section>
+    </div>
+  </div>
+  <div hidden id="taxPanelMount"><div aria-labelledby="simTaxHeading" class="item-detail" id="simTaxDetails" role="region">
+<div class="sim-card-title"><h3 id="simTaxHeading">所得税の計算</h3><div aria-label="税額の内訳を表示する制度" class="sim-detail-switch"><button aria-pressed="true" id="simDetailCurrent" type="button">現行</button><button aria-pressed="false" id="simDetailChanged" type="button">仮想</button></div></div>
+<p id="monthlyTaxDetail" class="detail-note"></p><div class="detail-subtitle">年間の所得税</div><div class="sim-tax-route" id="simTaxRoute"></div>
+<div class="sim-table-wrap"><table class="sim-table"><thead><tr><th scope="col">課税所得の区間</th><th scope="col">該当する所得</th><th scope="col">税率</th><th scope="col">区間の税額</th></tr></thead><tbody id="simTaxBody"></tbody></table></div>
+<p class="sim-footnote" id="simTaxFooter"></p>
+</div></div>
+  <section class="sim-card sim-full-width"><details id="simSources"><summary>計算の前提・現行制度・公式資料</summary><div class="sim-source-grid">
+<div>
+<p><strong>計算モデル：</strong>所得税は成立済みの2026年分の制度（12月の年末調整から反映される改正を含む）。住民税の概算はこの年収に対応する2027年度の負担を年額で差し引きます（課税収入は月給×12＋賞与−非課税手当×12）。社会保険料は2026年9月の料率による月給分×12＋賞与分。1〜3月の賞与にも同じ9月の料率を使用する固定条件のモデルです。実際の2026年1〜12月の入出金を再現する計算ではありません。</p>
+<p><strong>通常月：</strong>2026年9月の通常給与の源泉徴収額（甲欄・扶養0人）と、2026年度の住民税で計算。住民税は「前年も同じ給与・賞与」の仮定、前年実績の指定、通知書月額の指定から選べます。年間手取り÷12とは別の金額です。</p><p><strong>賞与：</strong>年3回までの支給月・額面を入力。標準賞与額は同月の額面を合算後、1,000円未満切捨て。厚生年金は月150万円、健康保険等は4月〜翌3月で573万円が上限。1〜3月に支給がある場合は前年4〜12月の標準賞与累計額を指定（初期0円）。当年分の額面年収には前年賞与は加算しません。支給月ごとの料率変更や異動・免除は再現しません。</p><p><strong>所得税：</strong>給与所得控除後の所得から社会保険料控除・基礎控除を控除し、課税所得の1,000円未満を切捨て。各段階の超過部分に税率を掛けて合算します。仮想制度も同じ方法で、速算表の控除額は固定流用しません。税額の1円未満切捨て後に復興特別所得税2.1%を計算し、合計の100円未満を切り捨てる概算です。</p>
+<p><strong>2026年分の基礎控除：</strong>合計所得489万円以下104万円、655万円以下67万円、2,350万円以下62万円、2,400万円以下48万円、2,450万円以下32万円、2,500万円以下16万円、それを超えると0円。現行制度は固定し、仮想制度側だけを編集できます。</p>
+<p><strong>通勤手当・その他控除：</strong>入力月給に含む非課税通勤手当は所得税・住民税の給与収入から除外し、社会保険料の報酬には含めます。その他の給与控除は月額×12を手取りから控除し、所得控除には含めません。</p><p><strong>住民税：</strong>東京23区・本人に特別な非課税要件なし・配偶者や扶養なし・給与所得のみ。所得割6%＋4%、調整控除、均等割と森林環境税を計算。所得税の基礎控除を変えても住民税の控除額・調整控除の制度は変えません。自治体ごとの上乗せや各種控除は対象外です。</p>
+<p><strong>社会保険：</strong>協会けんぽ加入済みが前提。健康保険・介護保険・厚生年金・子ども・子育て支援金・雇用保険を計算。賞与を含めず、入力した月給から標準報酬月額の等級を仮置き（決定済み等級の指定も可）。被扶養者からの加入、被扶養者認定、国保、国民年金、65歳以上、年途中の料率・資格・年齢・給与変更は再現しません。手入力は本人の所得控除対象の負担額を指定してください。</p>
+<p><strong>今回の対象外：</strong>年4回以上の賞与、賞与支給時の源泉徴収・振込額、副業、配偶者・扶養控除、税額控除、住宅ローン、生命保険、医療費、iDeCo、ふるさと納税、世帯手取り、会社独自の扶養手当など。「106万円・130万円の壁を変える」社会保険制度シミュレーションは未実装です。税率変更による雇用・賃金・税収の行動変化も推計しません。</p>
+</div>
+<div>
+<a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm" rel="noopener noreferrer" target="_blank">国税庁｜所得税の税率・超過累進課税</a>
+<a href="https://www.nta.go.jp/users/gensen/2026kiso/index.htm" rel="noopener noreferrer" target="_blank">国税庁｜2026年度の基礎控除等の改正・適用時期</a>
+<a href="https://www.nta.go.jp/publication/pamph/gensen/2026kaisei.pdf" rel="noopener noreferrer" target="_blank">国税庁｜2026年4月 源泉所得税の改正のあらまし</a>
+<a href="https://www.nta.go.jp/publication/pamph/koho/kurashi/html/02_1.htm" rel="noopener noreferrer" target="_blank">国税庁｜2026年分・給与所得控除後の金額表</a>
+<a href="https://www.city.chuo.lg.jp/a0009/kurashi/zeikin/juuminzei/r9kaisei.html" rel="noopener noreferrer" target="_blank">中央区｜2027年度から適用される個人住民税の改正</a>
+<a href="https://www.city.katori.lg.jp/living/zeikin/kojinshiminzei/r9zeiseikaisei.html" rel="noopener noreferrer" target="_blank">香取市｜2027年度の給与所得計算の特例</a>
+<a href="https://www.city.minato.tokyo.jp/kazei/kurashi/zekin/juminze/tominze/kesan.html" rel="noopener noreferrer" target="_blank">港区｜特別区民税・都民税の計算</a>
+<a href="https://www.city.minato.tokyo.jp/kazei/kurashi/zekin/kojo/shurui.html" rel="noopener noreferrer" target="_blank">港区｜住民税の基礎控除・調整控除</a>
+<a href="https://www.kyoukaikenpo.or.jp/about/business/insurance_rate/rate_prefectures/r08/index.html" rel="noopener noreferrer" target="_blank">協会けんぽ｜2026年度・47支部の料率</a>
+<a href="https://www.kyoukaikenpo.or.jp/assets/R8_13tokyo.pdf" rel="noopener noreferrer" target="_blank">協会けんぽ｜健康保険・厚生年金・支援金の等級表</a>
+<a href="https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20141203.html" target="_blank" rel="noopener noreferrer">日本年金機構｜賞与の保険料・上限・支給回数</a><a href="https://www.nta.go.jp/publication/pamph/gensen/zeigakuhyo2026/data/denshi_01.pdf" target="_blank" rel="noopener noreferrer">国税庁｜2026年・通常月の源泉徴収（電算機計算特例）</a><a href="https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20150515-01.html" rel="noopener noreferrer" target="_blank">日本年金機構｜厚生年金の保険料</a>
+<a href="https://jsite.mhlw.go.jp/yamagata-roudoukyoku/koyouhoken-20260316.html" rel="noopener noreferrer" target="_blank">厚生労働省｜2026年度の雇用保険料率</a>
+<a href="https://www.mhlw.go.jp/stf/taiou_001_00002.html" rel="noopener noreferrer" target="_blank">厚生労働省｜社会保険の「年収の壁」への対応</a>
+<p style="margin-top:15px">現行制度の確認日は2026年9月9日です。制度や料率の自動更新はありません。将来の年度に流用せず、公式資料を確認してください。比較のための試作であり、給与計算実務・税務申告の確定値ではありません。</p>
+</div>
+</div></details></section>
+  <footer class="sim-footer"><p>年収の壁 v0.7 / 2026-09-09<br>入力値のサーバー送信・アクセス解析・自動保存はありません。設定はJSONで保存できます。</p><p>所得税の変更は仮想の試算です。<br>公式資料を開く操作のみ外部サイトへ通信します。</p></footer>
+</div>
+<div class="sim-floating-summary"><div><span id="simFloatingLabel">年間手取り</span><strong id="simFloatingDelta">—</strong></div><a href="#simResults">手取り額へ</a><a href="#simEditor" data-sim-open-editor>所得税の変更</a></div>
+</main>

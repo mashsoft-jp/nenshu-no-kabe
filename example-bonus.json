@@ -1,0 +1,72 @@
+{
+  "format": "nenshu-no-kabe",
+  "version": 2,
+  "checkedAt": "2026-09-09",
+  "model": "unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot",
+  "input": {
+    "monthlyGross": 300000,
+    "bonuses": [
+      {
+        "month": 6,
+        "gross": 300000
+      },
+      {
+        "month": 12,
+        "gross": 300000
+      }
+    ],
+    "age": 30,
+    "prefecture": "東京都",
+    "employment": 50,
+    "socialMode": "auto",
+    "socialAnnual": 881400,
+    "residentMode": "estimate",
+    "residentAnnual": 307200,
+    "standardMode": "auto",
+    "healthStandard": 500000,
+    "pensionStandard": 500000,
+    "nonTax": 0,
+    "monthlyResidentMode": "estimate",
+    "residentMonthly": 25600,
+    "previousSalary": 6000000,
+    "previousSocial": 867600,
+    "other": 0,
+    "priorBonusStandard": 0,
+    "annualGross": 4200000
+  },
+  "policy": {
+    "brackets": [
+      {
+        "upper": 1950000,
+        "rateBp": 500
+      },
+      {
+        "upper": 3300000,
+        "rateBp": 1000
+      },
+      {
+        "upper": 6950000,
+        "rateBp": 2000
+      },
+      {
+        "upper": 9000000,
+        "rateBp": 2300
+      },
+      {
+        "upper": 18000000,
+        "rateBp": 3300
+      },
+      {
+        "upper": 40000000,
+        "rateBp": 4000
+      },
+      {
+        "upper": null,
+        "rateBp": 4500
+      }
+    ],
+    "basicMode": "current",
+    "basicAmount": 0
+  },
+  "graphMax": 12000000
+}

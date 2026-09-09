@@ -1,0 +1,76 @@
+{
+  "description": "v0.7から変更せず引き継いだファイルの検証用ハッシュ。法令検証済みを意味しない。",
+  "date": "2026-09-09",
+  "sourceArchive": "nenshu-no-kabe-2026-v07-source.zip",
+  "sourceArchiveSha256": "032b2d5b17dc27582d0b41a7b45d64f366eec6389154a2f2097063616c9daf54",
+  "files": {
+    "SOURCES.md": {
+      "sha256": "45e0e75273f670434d4aeb810175df8c3e813b4a7e3f770a27b71446b314f442",
+      "bytes": 6941
+    },
+    "TEST-RESULTS.md": {
+      "sha256": "1551f3f7acfef361f54f48838f885825299fb787afb9bad507a05093d7931333",
+      "bytes": 1643
+    },
+    "base.css": {
+      "sha256": "76fbb118019c1caaf54583fc4e9cf3febbd82fc9c5f9df33c2ce4f5d8c366aa5",
+      "bytes": 18742
+    },
+    "build.py": {
+      "sha256": "3ad0b7cb8bb293cad6063785ef2df4c1f1e3ef9bde5420bd49a610bcf720ca59",
+      "bytes": 1685
+    },
+    "example-bonus.json": {
+      "sha256": "7140e46b6669dcbeadb7dc6bf8f3aeb4ace224be5fbe95170d1868195e1fa164",
+      "bytes": 1435
+    },
+    "index.html": {
+      "sha256": "fac780552490ba5280d2efa7ba898c635d5964d71a4e99680086f6df2e24ea83",
+      "bytes": 161497
+    },
+    "monthly-engine.js": {
+      "sha256": "327e27a0f2f7b4c5cc4198be23dc049bf95d7775e216ee724420988ca11f6b30",
+      "bytes": 8283
+    },
+    "policy-engine.js": {
+      "sha256": "aac979d286d76409deafc859c1200897d0d54217f60df01f396e8286866d3f9b",
+      "bytes": 10307
+    },
+    "policy.css": {
+      "sha256": "165dab67a396e086047c052229e5ac58c8dddb6719ba32638133fd76f791e662",
+      "bytes": 19158
+    },
+    "test-monthly.cjs": {
+      "sha256": "480a3a26eaf0944b68f802ac9c77df9a2e8f9a64b0f5e99e024442c8bf2c8c2f",
+      "bytes": 2622
+    },
+    "test-policy.cjs": {
+      "sha256": "2688e4a58d8f11d4ec5d6c8dec2fe98b0dbf04ec0f1ac8b53fd6efe98c4e797d",
+      "bytes": 6350
+    },
+    "test-unified-ui.py": {
+      "sha256": "84d72e704623952c1a00775c095a69810cb2b509391d04c61be0d7a99518948d",
+      "bytes": 9576
+    },
+    "test-unified.cjs": {
+      "sha256": "78796294420851c3f69d9f4bbd621d27aceefb00ca5b8b9bee66b4b432fa6c43",
+      "bytes": 8373
+    },
+    "unified-engine.js": {
+      "sha256": "e3f42d894f5983e309b494e4a827fcdaff9c6d67582c22038932b2e100aa6a52",
+      "bytes": 10761
+    },
+    "unified-ui.js": {
+      "sha256": "9d56204686447088c8675f48687f4f441e7861cfe7e9318dfd59c0222b65281a",
+      "bytes": 56810
+    },
+    "unified-view.html": {
+      "sha256": "bdbf28b3a8ea394a83145b955001c8c16f900b07293e8cfdbe179d69bd9b5146",
+      "bytes": 27629
+    },
+    "unified.css": {
+      "sha256": "de25e318a6f21a0046a4070d7d7c4f40eac4a30e4db8da10bc1fec1a86a6c672",
+      "bytes": 8725
+    }
+  }
+}
