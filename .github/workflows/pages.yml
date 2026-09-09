@@ -1,0 +1,86 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keep production deployments sequential; PR runs use their own ref group.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Run calculation tests
+        run: |
+          node test-monthly.cjs
+          node test-policy.cjs
+          node test-unified.cjs
+      - name: Build public site
+        run: |
+          python3 build.py
+          install -d "$RUNNER_TEMP/nenshu-no-kabe-site"
+          install -m 644 index.html "$RUNNER_TEMP/nenshu-no-kabe-site/index.html"
+      - name: Verify public files
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          site = Path(os.environ['RUNNER_TEMP']) / 'nenshu-no-kabe-site'
+          entries = list(site.rglob('*'))
+          if len(entries) != 1 or entries[0].name != 'index.html' or entries[0].is_symlink():
+              raise SystemExit('The public site must contain only index.html')
+          public = (site / 'index.html').read_bytes()
+          if public != Path('index.html').read_bytes() or b'<html lang="ja">' not in public:
+              raise SystemExit('The public HTML does not match the build output')
+          print(f'Public files verified: index.html ({len(public):,} bytes)')
+          PY
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ${{ runner.temp }}/nenshu-no-kabe-site
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Deploy Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

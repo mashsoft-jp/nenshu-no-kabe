@@ -4,9 +4,21 @@
 
 ## このリポジトリ
 
-`mashsoft-jp/nenshu-no-kabe` に、会話で作成したv0.7の分離ソース・テスト・仕様書を初期登録します。アプリの画面・計算はv0.7から変更していません。ソース・承認済み仕様・変更履歴はこのリポジトリで管理します。
+`mashsoft-jp/nenshu-no-kabe` で、v0.7の分離ソース・テスト・仕様書を管理します。初期登録PR #1はmainへマージ済みです。アプリの画面・計算はv0.7から変更していません。以後はmainを基点に変更ブランチとPRを作成します。
 
-初期登録ブランチ：`chore/import-v0.7-project`。確認用PRがmainにマージされるまでは、このブランチを開発対象として参照してください。初期登録だけでは一般公開サイトやクラウド実行環境は作成されません。
+## GitHub Pages
+
+ユーザー依頼に基づき、`.github/workflows/pages.yml` でテスト・ビルド・公開を行う構成を追加しました。リポジトリはprivateのまま、Webサイトには生成した `index.html` だけを配信します。HTML内のJavaScript・CSSは公開されますが、開発資料やGit履歴は含めません。
+
+公開予定URL（公開済みであることを示すものではありません）：
+
+```text
+https://mashsoft-jp.github.io/nenshu-no-kabe/
+```
+
+**初回のみ Settings → Pages → Build and deployment → Source を GitHub Actions に設定**します。設定PRのCI・Cursor Bugbotを確認してmainへマージすると、mainへのpushを契機にデプロイされます。PR内ではテストとビルドのみを行い、公開はしません。設定後の再実行はActionsのGitHub Pagesワークフローから行えます。
+
+privateな組織リポジトリのPagesはGitHub Team / Enterprise等の対応プランが必要です。契約・課金設定・リポジトリの可視性は自動変更しません。一般のPagesサイトはprivateリポジトリからでも公開サイトになります。初回設定、確認方法、復旧手順は [docs/PAGES.md](docs/PAGES.md) を参照してください。
 
 ## ビルド
 
@@ -16,7 +28,7 @@
 python3 build.py
 ```
 
-生成される `index.html` が実行ファイルです。生成物はGit管理から除外し、JS/CSS/HTMLの分離ソースを編集します。初期登録時のビルドは元の `nenshu-no-kabe-2026-v07.html` とバイト単位で一致することを確認します。
+生成される `index.html` が実行ファイルです。生成物はGit管理から除外し、JS/CSS/HTMLの分離ソースを編集します。初期登録時のビルドは元の `nenshu-no-kabe-2026-v07.html` とバイト単位で一致することを確認済みです。Pagesワークフローでも同じビルド処理を使います。
 
 ## テスト
 
@@ -26,16 +38,18 @@ node test-policy.cjs
 node test-unified.cjs
 ```
 
-UIテストにはPython版PlaywrightとChromiumが必要です。実行環境を用意した後、次を実行します。
+Pagesワークフローは上記3本とビルド・公開ファイル検査を実行します。GitHub Actions上の実行結果は各PRのChecks / Actionsで確認してください。
+
+UIテストにはPython版PlaywrightとChromiumが必要です。今回のPagesワークフローには含めていません。実行環境を用意した後、次を実行します。
 
 ```sh
 python3 build.py
 python3 test-unified-ui.py
 ```
 
-Chromiumの場所を指定する場合は環境変数 `CHROMIUM_PATH` を使用します。今回の初期登録にはGitHub Actionsワークフローは含めていません。検証記録は `docs/VERIFICATION.md` を参照してください。
+Chromiumの場所を指定する場合は環境変数 `CHROMIUM_PATH` を使用します。初期移行の検証記録は `docs/VERIFICATION.md` を参照してください。
 
-## 画面確認
+## 開発中の画面確認
 
 Node.js・Pythonが使える作業環境内で、ビルドしたHTMLだけを専用ディレクトリにコピーして配信できます。
 
@@ -46,7 +60,7 @@ cp index.html preview/index.html
 python3 -m http.server 8000 --bind 127.0.0.1 --directory preview
 ```
 
-これは開発用の確認方法です。クラウド環境ではポート8000の非公開プレビューを使用し、リポジトリ本体・認証情報・利用者設定を公開しないでください。一般公開、Codespaces等の有料環境作成、自動デプロイは別途確認して進めます。
+これは開発用の確認方法です。クラウド環境ではポート8000の非公開プレビューを使用し、リポジトリ本体・認証情報・利用者設定を公開しないでください。Codespaces等の有料環境作成は今回のPages設定には含みません。
 
 ## 主なファイル
 
@@ -58,6 +72,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory preview
 | `policy-engine.js` | 年間税額・仮想制度の計算部 |
 | `unified-engine.js` | 月給・賞与を統合する計算部 |
 | `build.py` | 単体HTML生成 |
+| `.github/workflows/pages.yml` / `docs/PAGES.md` | Pages用CI・デプロイ・初回設定 |
 | `test-*.cjs` / `test-unified-ui.py` | 計算・画面の回帰テスト |
 | `PROJECT.md` / `docs/SPEC.md` | プロジェクト概要・仕様 |
 | `docs/DECISIONS.md` / `docs/BACKLOG.md` | 確定事項・開発課題 |
@@ -68,8 +83,8 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory preview
 
 現在は20〜64歳、配偶者・扶養なし、協会けんぽ・厚生年金に加入済みの給与所得モデルです。通常月と年間は対象期間・計算方式が異なり、年間表示は実際の1〜12月の振込総額ではありません。社会保険加入・被扶養者認定の「壁」は未実装です。
 
-画面の制度確認日や `SOURCES.md` はv0.7から引き継いだ情報です。今回の登録・テスト通過によって最新法令への完全準拠を保証するものではありません。公開前の独立検算は `docs/BACKLOG.md` のCALC-001 / QA-001として残しています。
+画面の制度確認日や `SOURCES.md` はv0.7から引き継いだ情報です。登録・Pages対応・テスト通過によって最新法令への完全準拠を保証するものではありません。独立検算は `docs/BACKLOG.md` のCALC-001 / QA-001として残しています。
 
-入力値の外部送信・自動保存・アクセス解析はありません。設定は利用者の明示操作でJSON保存します。公式資料のリンクを開くと外部へ通信します。
+アプリによる入力値の外部送信・自動保存・アクセス解析はありません。設定は利用者の明示操作でJSON保存します。Webサイトの読み込みや公式資料リンクは外部への通信を伴い、GitHub側のホスティングのアクセスログ等はアプリの計算処理とは別です。
 
-ライセンス・一般公開・ホスティング・独自ドメイン・フレームワーク移行は未決定です。
+公開先はGitHub Pages。ライセンス・独自ドメイン・収益化・フレームワーク移行は引き続き未決定です。
