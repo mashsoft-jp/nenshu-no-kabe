@@ -62,7 +62,7 @@ with sync_playwright() as p:
         # Policy changes share family assumptions and do not alter monthly withholding.
         page.locator('#simEditorSummary').click();page.locator('#simExampleThreshold').click()
         expect(page.locator('#monthlyTaxDetail')).to_contain_text('所得税等 7,920円')
-        saved=save(page);check(saved['version']==4,'v4 saved')
+        saved=save(page);check(saved['version']==5,'v5 saved')
         check(saved['input']['dependents']['young']==1,'current family saved')
         check(saved['input']['previousDependents']['specific']==1,'previous family saved')
         page.locator('#dependent_young').fill('0');load(page,saved)
@@ -90,7 +90,7 @@ with sync_playwright() as p:
         load(page,old);expect(page.locator('#dependent_young')).to_have_value('0')
         expect(page.locator('#toast')).to_contain_text('扶養は0人')
         expect(page.locator('#monthlyNet')).to_have_text('383,080円')
-        # A v4 document missing new conditions is rejected without changing the current input.
+        # A v5 document missing new conditions is rejected without changing the current input.
         broken=json.loads(json.dumps(saved));broken['input'].pop('dependents');load(page,broken)
         expect(page.locator('#toast')).to_contain_text('読み込みできません')
         expect(page.locator('#dependent_young')).to_have_value('0')

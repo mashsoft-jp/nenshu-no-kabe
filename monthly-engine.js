@@ -41,7 +41,7 @@ const Tedori = (() => {
   // NTA 2026 monthly withholding, column A computer-calculation special rule.
   // NOT annual income tax / 12. Reconstruction surtax already included.
   function withholding(afterSocial, dependents = 0) {
-    integer(dependents,0,10,'源泉徴収上の扶養親族等の数');
+    integer(dependents,0,40,'源泉徴収上の扶養親族等の数');
     const a = Math.max(0, afterSocial);
     let earningsDeduction;
     if (a <= 158333) earningsDeduction = 54167;

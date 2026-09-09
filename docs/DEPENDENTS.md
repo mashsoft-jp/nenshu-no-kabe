@@ -73,3 +73,6 @@ CSV・コピーに今年/前年の扶養区分と源泉徴収人数、控除額�
 - UI：統合135 checks、住民税45 checks、税率グラフ746 checks、扶養45 checks＋各Playwright assertionsがPASS。全て1440 / 1024 / 768 / 390 / 320pxで実行。
 - Python 3.9.6 / Node.js 24.5.0 / Playwright 1.60.0・対応Chromium。合成入力のPC・スマートフォン幅スクリーンショットを目視確認。外部通信・個人設定保存を追加していない。
 - ローカルブランチ `codex/dependent-conditions` に実装。GitHubのCI・Bugbot・公開URLの検証は未実行。
+
+
+2026-09-10追記：配偶者・その他控除を追加し、保存形式をversion 5へ拡張。本文の配偶者・特定親族・障害者等の対象外記載は初回扶養実装時の記録。最新の対応範囲・通常月人数の40人上限・JSON移行は `docs/DEDUCTIONS.md` を優先する。

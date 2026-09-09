@@ -18,7 +18,7 @@ bad(()=>U.calculate(input({dependents:family({young:6,adult:5})})));
 bad(()=>U.calculate(input({dependents:{...family({}),spouse:1}})));
 for(const key of ['dependents','previousDependents'])for(const v of [null,[],{},'bad'])bad(()=>U.calculate(input({[key]:v})));
 for(const key of ['withholdingDependentMode','previousDependentMode'])bad(()=>U.calculate(input({[key]:'bad'})));
-for(const v of [-1,0.5,11,NaN])bad(()=>U.calculate(input({withholdingDependents:v})));
+for(const v of [-1,0.5,41,NaN])bad(()=>U.calculate(input({withholdingDependents:v})));
 eq(U.dependentAmounts(family({adult:10})).national,3800000,'ten supported');
 // NTA published monthly special-calculation example; one child adds exactly 31,667 yen to deduction.
 eq(M.withholding(175000,2).tax,210,'official example');
@@ -53,19 +53,19 @@ eq(comparison.current.monthly,comparison.changed.monthly,'policy leaves monthly 
 eq(comparison.current.resident,comparison.changed.resident,'policy leaves resident unchanged');
 eq(comparison.changed.national.dependentDeduction,380000,'dependent deduction shared by both policies');
 for(const sample of U.sampleForInput(x,12000000,15))eq(sample.dependents,x.dependents,'graph preserves family');
-const doc={format:'nenshu-no-kabe',version:4,input:x,policy:U.currentPolicy(),graphMax:12000000};
-eq(U.validateDocument(doc).input,x,'v4 complete round trip');
+const doc={format:'nenshu-no-kabe',version:5,input:x,policy:U.currentPolicy(),graphMax:12000000};
+eq(U.validateDocument(doc).input,x,'v5 complete round trip');
 for(const key of ['dependents','previousDependents','previousDependentMode','withholdingDependentMode','withholdingDependents']){
  const broken=JSON.parse(JSON.stringify(doc));delete broken.input[key];bad(()=>U.validateDocument(broken));
 }
 for(const version of [2,3]){
  const old=JSON.parse(JSON.stringify(doc));old.version=version;
  // Even injected new fields in an old document cannot change the old no-dependent model.
- const migrated=U.validateDocument(old);eq(migrated.version,4,'upgrade');eq(migrated.dependentLegacy,true,'migration notice');
+ const migrated=U.validateDocument(old);eq(migrated.version,5,'upgrade');eq(migrated.dependentLegacy,true,'migration notice');
  eq(migrated.input.dependents,family({}),'old family is zero');
  eq(U.calculate(migrated.input).net,U.calculate({...x,dependents:family({})}).net,'old results preserved');
 }
-for(const version of [0,5,'4'])bad(()=>U.validateDocument({...doc,version}));
+for(const version of [0,6,'5'])bad(()=>U.validateDocument({...doc,version}));
 // Dependent deductions must not lower the income used to choose a basic deduction.
 eq(U.incomeTax(4890001,0,U.currentPolicy(),380000).basic,670000,'basic deduction phaseout is before dependent deduction');
 // Personal deduction difference is fixed, not the enlarged 2026 national basic deduction.

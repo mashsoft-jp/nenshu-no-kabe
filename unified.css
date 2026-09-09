@@ -27,3 +27,9 @@ body.policy-mode #copyButton{display:inline-flex}
 
 /* Keep paired dependent count controls aligned when category labels wrap. */
 .dependent-fields{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+
+.tax-group{margin:12px 0;padding:8px 0;border-bottom:1px solid var(--line)}
+.tax-group summary{cursor:pointer;font-weight:600}
+.tax-group .sim-hint{margin:10px 0}
+
+.tax-group input[type=text]{width:100%;min-width:0;min-height:39px;font-size:13px;padding:8px 10px;border:1px solid #36485e;border-radius:10px;background:#0e1622;color:var(--text)}

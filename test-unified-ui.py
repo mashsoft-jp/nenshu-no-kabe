@@ -74,7 +74,7 @@ with sync_playwright() as p:
         with page.expect_download() as dl:
             page.locator('#simSave').click()
         saved=json.loads(Path(dl.value.path()).read_text())
-        check(saved['format']=='nenshu-no-kabe' and saved['version']==4,'v4 settings schema')
+        check(saved['format']=='nenshu-no-kabe' and saved['version']==5,'v5 settings schema')
         check(saved['input']['monthlyGross']==600000 and len(saved['input']['bonuses'])==2,'settings include bonuses')
         # Count limit and prior fiscal cap UI.
         page.locator('#addBonus').click();expect(page.locator('#addBonus')).to_be_disabled();expect(page.locator('#priorBonusWrap')).to_be_visible()
