@@ -69,3 +69,11 @@ python3 test-resident-notice-ui.py
 - 追加UIテスト：同5画面幅、45 checks＋Playwright assertions PASS。年額連動、詳細の維持、誤入力時の配分非表示・出力停止、0円、6月一括、直接月額優先、自動概算への復帰、旧設定保持、JSON再読込、CSV・コピー、階段グラフ、横はみ出し・JavaScriptエラー・外部要求なしを確認。
 
 追加計算テストは `test-unified.cjs` から呼び出すため既存CIの対象になる。UIテストはChromiumの `set_content` による作業環境内の確認であり、既存CIには追加しない。公開URL上の操作、Safari / Firefox / 実機端末の確認は未実施。PRのCIとBugbot、マージ・公開の状態はGitHubの実行結果を確認する。
+
+### ローカル引き継ぎ時の再検証（2026-09-09）
+
+Python 3.9.6 / Node.js 24.5.0でビルドと計算テストを再実行し、すべてPASS。Git管理対象外の `.venv` にPlaywright 1.60.0と対応Chromiumを導入し、既存UI 135 checks・住民税UI 45 checksを同5画面幅で確認した（各Playwright assertionsもPASS）。
+
+税率グラフ単独UIテストに残っていた保存JSON version 2の期待値を、承認済み仕様のversion 3に更新。再実行で746 checks＋Playwright assertionsが同5画面幅でPASS。アプリの仕様・計算・表示は変更していない。
+
+ローカルUIテストは `PLAYWRIGHT_BROWSERS_PATH="$PWD/.venv/browsers" .venv/bin/python test-unified-ui.py` で実行する。住民税UI・税率グラフはファイル名をそれぞれ `test-resident-notice-ui.py` / `test-rate-chart.py` に置き換える。
