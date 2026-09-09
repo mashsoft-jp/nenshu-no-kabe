@@ -70,8 +70,15 @@
 <span class="badge" id="simOptionState">未変更</span>
 </summary>
 <div class="sim-editor-content">
+<section class="rate-overview" id="rateOverview" aria-labelledby="rateHeading">
+<div class="sim-card-title"><h2 id="rateHeading">税率設定</h2><span class="badge green" id="simStageBadge">7段階</span></div>
+<svg id="rateChart" role="img" tabindex="0" viewBox="0 0 800 330" aria-label="課税所得ごとの税率" aria-describedby="rateChartHint"></svg>
+<p id="rateChartError" class="sim-error" role="status" hidden>区分の金額・税率が正しくなるまでグラフを非表示にしています。</p>
+<p id="rateChartSelection" class="rate-chart-selection" aria-live="polite" aria-atomic="true"></p>
+<p id="rateChartHint" class="sim-hint">区間をタップ、またはグラフにフォーカスして左右キーで段階を選択。下の入力欄・スライダーで変更できます。</p>
+<p class="sim-hint">横軸は額面年収ではなく課税所得で、金額に比例した表示です。最終段階は上限なし。復興特別所得税は含みません。</p>
+</section>
 <div class="sim-editor-main">
-<div class="sim-card-title"><h2>税率設定（仮想制度）</h2><span class="badge green" id="simStageBadge">7段階</span></div>
 <div class="sim-editor-help"><strong>税率の区分は課税所得が基準です。</strong><br/>給与から控除を差し引いた所得に、区間ごとの税率を適用します。</div>
 <p class="sim-hint" style="margin-bottom:8px">変更例（仮想制度）</p>
 <div class="sim-example-buttons"><button id="simExampleThreshold" type="button">195万 → 300万円</button><button id="simExampleRate" type="button">全区分 −1ポイント</button><button id="simExampleZero" type="button">0%の段階を追加</button></div>

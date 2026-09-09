@@ -1,0 +1,17 @@
+/* Full schedule stays inside the optional tax editor, above the numeric rows. */
+.rate-overview{grid-column:1/-1;min-width:0;border-bottom:1px solid var(--line);padding-bottom:18px}
+.rate-overview .sim-card-title{margin-bottom:10px}
+.rate-overview svg{display:block;width:100%;height:auto;overflow:visible;cursor:crosshair;touch-action:pan-y}
+.rate-overview svg[hidden]{display:none}
+.rate-axis,.rate-axis-title{fill:var(--muted);font-size:11px}
+.rate-axis-title{font-size:10px}
+.rate-grid{stroke:var(--line);stroke-width:1}
+.rate-boundary{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4;opacity:.4}
+.rate-selection-band{fill:var(--net);opacity:.07}
+.rate-step-line{fill:none;stroke:var(--net);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.rate-point{fill:var(--panel);stroke:var(--net);stroke-width:2;cursor:pointer}
+.rate-point.is-selected{fill:var(--net)}
+.rate-value{fill:var(--text);font-size:12px;font-weight:650}
+.rate-chart-selection{font-size:13px;color:var(--net);font-weight:650;padding:10px 12px;border:1px solid #305c51;border-radius:9px;background:#112621;overflow-wrap:anywhere}
+.rate-overview .sim-hint{margin-top:9px}
+@media(max-width:620px){.rate-chart-selection{font-size:12px}.rate-overview{padding-bottom:14px}}
