@@ -14,8 +14,9 @@
           <div class="sim-field"><label for="payType">報酬の区分</label><select id="payType"><option value="employee">従業員の給与（雇用保険あり）</option><option value="officer">代表取締役・役員報酬のみ（雇用保険なし）</option><option value="custom">兼務役員・その他（雇用保険を個別指定）</option></select><p class="sim-hint" id="payTypeHint">従業員は雇用保険ありを初期設定にします。加入対象外や兼務役員は個別指定を選んでください。</p></div>
           <div class="sim-field"><label for="monthlyGross">月給（額面・手当込み）</label><div class="sim-input-unit sim-income-input"><input id="monthlyGross" type="number" value="500000" min="80000" max="8333333" step="1" inputmode="numeric" aria-describedby="monthlyGrossHint"><span>円</span></div>
           <input id="monthlySlider" type="range" min="80000" max="2000000" step="1000" value="500000" aria-label="月給の調整"><div class="sim-income-caption"><span>8万円</span><span>200万円</span></div>
-          <div class="sim-presets"><button type="button" data-monthly="250000">25万円</button><button type="button" data-monthly="300000">30万円</button><button type="button" data-monthly="400000">40万円</button><button type="button" data-monthly="500000">50万円</button></div>
           <p class="sim-hint" id="monthlyGrossHint">毎月同額の給与を想定。賞与は下に入力します。</p></div>
+          <div class="sim-field"><label for="nonTax">月給に含む非課税通勤手当（月額・円）</label><input id="nonTax" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric" aria-describedby="nonTaxHint"><p class="sim-hint" id="nonTaxHint">上の月給に含まれる金額を入力してください。月給へ追加で加算するものではありません。</p></div>
+          <div class="sim-field"><label for="otherDeduction">その他の給与控除（月額・円）</label><input id="otherDeduction" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric" aria-describedby="otherDeductionHint"><p class="sim-hint">年額は月額×12。所得控除には含めません。</p><p class="sim-hint" id="otherDeductionHint">社宅費・組合費など、税金・社会保険料以外に毎月の給与から差し引かれる金額です。</p></div>
           <div class="bonus-section"><div class="bonus-heading"><label>賞与（任意・額面）</label><button type="button" id="addBonus">＋ 賞与を追加</button></div>
           <div id="bonusRows"></div><p id="bonusEmpty" class="sim-hint">賞与なし</p><div id="bonusTotalWrap" class="bonus-total" hidden><span>賞与合計</span><strong id="bonusTotal">0円</strong></div>
           <p class="sim-hint" id="bonusLimitHint" hidden>支給月・金額を年3回まで入力できます。</p>
@@ -51,7 +52,7 @@
           <details class="sim-conditions" id="advancedConditions"><summary>詳細条件</summary><div class="sim-inner">
             <p class="sim-hint">社会保険加入済みのモデルです。扶養条件は上で指定できます。給与・賞与以外の本人所得は含めません。</p>
             <div class="sim-field"><label for="simEmployment">雇用保険の本人負担</label><select id="simEmployment"><option value="50">一般の事業：0.5%</option><option value="60">農林水産・清酒製造・建設：0.6%</option><option value="0">加入対象外：計算しない</option></select></div>
-            <div class="sim-field"><label for="nonTax">月給に含む非課税通勤手当（円）</label><input id="nonTax" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"></div>
+
             <div class="sim-field"><label for="standardMode">標準報酬月額</label><select id="standardMode"><option value="auto">入力した月給から等級を仮置き</option><option value="manual">決定済みの等級を指定</option></select></div>
             <div id="standardManualWrap" hidden><div class="sim-field"><label for="healthStandard">健康保険の標準報酬月額</label><select id="healthStandard"></select></div><div class="sim-field"><label for="pensionStandard">厚生年金の標準報酬月額</label><select id="pensionStandard"></select></div></div>
             <div class="sim-field"><label for="simResidentMode">年間手取りに使う住民税</label><select id="simResidentMode"><option value="estimate">2027年度の負担を東京23区で概算</option><option value="manual">通知書の年額を入力・月額にも反映</option></select><p class="sim-hint">通知書の年額はその通知書の対象年度です。翌年度の予測額とは区別します。</p></div>
@@ -69,7 +70,7 @@
             <div class="sim-field" id="monthlyResidentManualWrap" hidden><label for="residentMonthly">通常月の住民税・森林環境税（円）</label><input id="residentMonthly" type="number" min="0" max="8333333" value="25600" step="1" inputmode="numeric"><p class="sim-hint">年度途中の転職・税額変更などは通知書の月額を優先します。給与天引きがなく別払いの場合は0円を指定。年間の住民税負担とは別です。ここでは6月の手取りを自動算出しません。</p></div>
             <div class="sim-field"><label for="simSocialMode">年間手取りに使う社会保険料</label><select id="simSocialMode"><option value="auto">月給分×12＋賞与分で概算</option><option value="manual">本人負担の年額を入力・固定</option></select></div>
             <div class="sim-field" id="simSocialManualWrap" hidden><label for="simSocialAnnual">年間社会保険料（円）</label><input id="simSocialAnnual" type="number" min="0" max="50000000" step="1" value="881400" inputmode="numeric"><p class="sim-hint">年間手取りのみ上書きします。通常月は月給・等級から計算します。</p></div>
-            <div class="sim-field"><label for="otherDeduction">その他の給与控除（月額・円）</label><input id="otherDeduction" type="number" min="0" max="8333333" value="0" step="1" inputmode="numeric"><p class="sim-hint">年額は月額×12。所得控除には含めません。</p></div>
+
           </div></details>
         </form>
         <a href="#simResults" class="sim-mobile-jump">手取り額へ移動 ↓</a>
