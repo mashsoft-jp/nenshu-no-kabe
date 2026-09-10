@@ -136,7 +136,7 @@
     const health = round(std.health*healthRate,20000);
     const care = round(std.health*(healthRate+careRate),20000)-health;
     const parts = {
-      health:health*12, care:care*12, child:round(std.health*23,20000)*12,
+      health:health*12, care:care*12, child:Math.ceil(std.health*23/20000)*12,
       pension:round(std.pension*1830,20000)*12,
       employment:round(x.annualGross*x.employment,120000)*12
     };

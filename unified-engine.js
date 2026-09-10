@@ -113,7 +113,7 @@
     if(x.priorBonusStandard%1000)throw new Error('前年の標準賞与累計額は1,000円単位で入力してください。');
     if(!['auto','manual'].includes(x.socialMode))throw new Error('年間社会保険料の設定が不正です。');
     if(!['estimate','manual'].includes(x.residentMode))throw new Error('年間住民税の設定が不正です。');
-    if(!['estimate','previous','annual','manual'].includes(x.monthlyResidentMode))throw new Error('通常月の住民税の設定が不正です。');
+    if(!['estimate','previous','annual','manual','none'].includes(x.monthlyResidentMode))throw new Error('通常月の住民税の設定が不正です。');
     if(x.monthlyResidentMode==='annual'&&x.residentMode!=='manual')throw new Error('月額を年額に連動するには、住民税の通知書年額を入力してください。');
     if(!['split','june'].includes(x.residentCollectionMode??'split'))throw new Error('住民税の徴収方法が不正です。');
     integer(x.socialAnnual,0,50000000,'年間社会保険料（円）');
@@ -131,7 +131,7 @@
     function partsFor(healthBase,pensionBase,employmentAmount){
       const health=round(healthBase*healthRate,20000);
       return {health,care:round(healthBase*(healthRate+careRate),20000)-health,
-        pension:round(pensionBase*1830,20000),child:round(healthBase*23,20000),employment:employmentAmount};
+        pension:round(pensionBase*1830,20000),child:Math.ceil(healthBase*23/20000),employment:employmentAmount};
     }
     const monthlyParts=partsFor(std.health,std.pension,round(x.monthlyGross*x.employment,10000));
     // Combine same-month bonuses BEFORE rounding the standard bonus base.
@@ -182,7 +182,8 @@
   function monthlyResult(x,auto){
     const withholding=Monthly.withholding(x.monthlyGross-x.nonTax-auto.monthlyTotal,withholdingCount(x));
     let residentDetail=null,resident;
-    if(x.monthlyResidentMode==='manual')resident=x.residentMonthly;
+    if(x.monthlyResidentMode==='none')resident=0;
+    else if(x.monthlyResidentMode==='manual')resident=x.residentMonthly;
     else if(x.monthlyResidentMode==='annual'){
       residentDetail={...residentInstallments(x.residentAnnual,x.residentCollectionMode??'split'),notice:true};
       resident=residentDetail.monthly;
@@ -246,7 +247,7 @@
     if(doc?.format==='tedori-policy'&&doc.version===1){
       const d=Base.validateDocument(doc);x={...defaultInput(),...d.input,monthlyGross:Math.floor(d.input.annualGross/12),bonuses:[]};
       x.annualGross=annualGross(x);legacy=true;
-    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5].includes(doc.version)){
+    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5,6].includes(doc.version)){
       x=Base.clone(doc.input);
       if(doc.version===2){
         // Preserve old annual/monthly independence, rather than changing saved results.
@@ -260,8 +261,9 @@
       x.previousDependentMode='same';x.withholdingDependentMode='same';x.withholdingDependents=0;dependentLegacy=true;
     }
     if(doc.version<5){x.taxConditions=Deductions.defaults();x.previousTaxConditions=Deductions.defaults();x.previousTaxMode='same';deductionLegacy=true;}
+    if(doc.version<6&&x.monthlyResidentMode==='none')throw new Error('旧設定の住民税月額モードが不正です。');
     validateInput(x);Base.validatePolicy(doc.policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
-    return {format:'nenshu-no-kabe',version:5,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
+    return {format:'nenshu-no-kabe',version:6,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
   }
   return {...Base,MAX_MONTHLY,MIN_MONTHLY,defaultInput,validateInput,bonusTotal,annualGross,
     Deductions,previousTaxConditions,salaryIncome2025,dependentKeys,emptyDependents,dependentAmounts,withholdingCount,previousFamily,salaryAdjustment,familyResidentTax,

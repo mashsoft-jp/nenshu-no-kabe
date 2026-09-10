@@ -77,3 +77,9 @@ Python 3.9.6 / Node.js 24.5.0でビルドと計算テストを再実行し、す
 税率グラフ単独UIテストに残っていた保存JSON version 2の期待値を、承認済み仕様のversion 3に更新。再実行で746 checks＋Playwright assertionsが同5画面幅でPASS。アプリの仕様・計算・表示は変更していない。
 
 ローカルUIテストは `PLAYWRIGHT_BROWSERS_PATH="$PWD/.venv/browsers" .venv/bin/python test-unified-ui.py` で実行する。住民税UI・税率グラフはファイル名をそれぞれ `test-resident-notice-ui.py` / `test-rate-chart.py` に置き換える。
+
+## 2026-09-10 月給から住民税を天引きしない選択
+
+「通常月の住民税」に「月給から天引きしない（自分で別途支払う）」を追加。通常月の住民税は0円、年間の税額・年間手取りは従来どおり別払いの負担を含める。年額・年額計算方法を変更しても天引きなしを維持する。別払い時は年額入力の説明を切り替え、給与特別徴収の配分と6月手取りは非表示、CSVの配分欄は空欄とする。普通徴収の各期納付額は計算しない。
+
+JSON version 6に `monthlyResidentMode: none` を追加。旧version 1〜5は既存の移行を維持し、天引き方法を勝手に変えない。旧versionでのnone指定と未知のモードは拒否する。既定は従来どおり前年同額の概算。受入条件は月額のみ0円・年額維持、年額編集後の選択維持、JSON復元、狭幅での表示。
