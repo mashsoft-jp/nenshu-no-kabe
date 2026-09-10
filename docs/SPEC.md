@@ -156,3 +156,11 @@ JSON version 6に `monthlyResidentMode: none` を追加。旧version 1〜5は既
 代表取締役・業務執行権のある取締役は被保険者とならず、その他役員も原則対象外。雇用関係が認められる兼務役員は例外があるため個別指定を残す。ただし役員報酬と雇用保険対象の給与が混在する計算は未対応と明示し、一律に全役員を非加入と断定しない。一次資料確認：北海道ハローワーク「雇用保険の被保険者の種類と要件」 https://jsite.mhlw.go.jp/hokkaido-hellowork/list/sapporo/jigyosyomainhokennryoumada/hoken3/01.html （2026-09-10閲覧）。保険料率改定ではなく入力連動の追加。
 
 JSON version 7にpayType（employee/officer/custom）を保存。旧version 1〜6は雇用保険率を変更せず、0ならcustom、それ以外ならemployeeとして移行する。旧ファイルから役員と推測しない。version 7の区分欠落・未知値、officerと非ゼロ保険料率の矛盾は拒否する。確認画面・CSV・コピーにも報酬区分を含める。給与設定の自動送信・自動保存は追加しない。
+
+## 2026-09-10 社会保険入力の説明整理
+
+所在地欄を「勤務先の所在地（都道府県）」とし、健康保険の登録事業所の所在地、本社一括加入等では実際の協会けんぽ支部を選ぶ旨を補足。勤務地だけで保険者を自動判定するものではなく、既存prefectureの計算上の意味とJSONは維持する。
+
+手取り結果に、協会けんぽの計算支部、健保組合の料率・本人負担割合による差、標準報酬月額の自動概算／指定額使用を常時表示。年間社会保険料の手入力時は年額を優先する旨も記載する。ステップ入力では標準報酬月額の指定欄を折りたたみ、通常は月給から自動概算。決定済みの指定額や旧JSONを勝手に上書きしない。標準報酬月額の等級は健保組合ごとの独自料率とは区別し、4〜6月の報酬などから決まる実額と当月給与からの概算が異なり得るため、指定機能は維持する。
+
+確認した一次資料（2026-09-10閲覧）：協会けんぽ令和8年度保険料率のお知らせ https://www.kyoukaikenpo.or.jp/lp/2026hokenryou/ 、奈良支部評議会（一括適用は本社所在地） https://www.kyoukaikenpo.or.jp/file/R53kaigijiroku.pdf 、日本年金機構の標準報酬説明 https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20150515-01.html 、アコム健康保険組合の50等級・保険料説明 https://acom-kenpo.or.jp/health-insurance-top/hokenryou/ 。計算制度・料率変更はなし。

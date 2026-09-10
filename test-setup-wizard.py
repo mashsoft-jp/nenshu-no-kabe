@@ -23,6 +23,13 @@ with sync_playwright() as p:
         page.locator('#monthlyGross').press('Enter')
         expect(page.locator('#setupTitle')).to_have_text('社会保険')
         expect(page.locator('#setupTitle')).to_be_focused()
+        expect(page.locator('label[for="simPrefecture"]')).to_have_text('勤務先の所在地（都道府県）')
+        expect(page.locator('#standardMode')).to_be_hidden()
+        page.locator('#setupStandardOptions>summary').click()
+        page.locator('#standardMode').select_option('manual')
+        expect(page.locator('#healthStandard')).to_be_visible()
+        page.locator('#standardMode').select_option('auto')
+        page.locator('#setupStandardOptions>summary').click()
         # Regression: unfinished later step must remain reachable after Back.
         page.locator('#simAge').fill('')
         page.locator('#setupBack').click()
@@ -63,6 +70,8 @@ with sync_playwright() as p:
         page.locator('#setupNext').click()
         expect(page.locator('#simResults')).to_be_visible()
         expect(page.locator('#setupWizard')).to_be_hidden()
+        expect(page.locator('#socialModelNote')).to_contain_text('協会けんぽ（東京都支部）')
+        expect(page.locator('#socialModelNote')).to_contain_text('標準報酬月額は入力した月給からの概算')
         with page.expect_download() as download:page.locator('#simSave').click()
         saved=json.loads(Path(download.value.path()).read_text())
         assert saved['input']['monthlyResidentMode']=='none'
@@ -75,6 +84,19 @@ with sync_playwright() as p:
         # Import while in the wizard updates the same controls and preserves the flow.
         page.locator('#simFile').set_input_files({'name':'settings.json','mimeType':'application/json','buffer':json.dumps(saved).encode()})
         expect(page.locator('#toast')).to_contain_text('設定を読み込みました')
+        # Load manual grades into an already-active wizard and reveal them.
+        saved['input'].update(standardMode='manual',healthStandard=280000,pensionStandard=280000)
+        page.locator('#simFile').set_input_files({'name':'manual.json','mimeType':'application/json','buffer':json.dumps(saved).encode()})
+        expect(page.locator('#standardMode')).to_have_value('manual')
+        page.locator('#setupNext').click()
+        expect(page.locator('#healthStandard')).to_be_visible()
+        expect(page.locator('#healthStandard')).to_have_value('280000')
+        expect(page.locator('#pensionStandard')).to_have_value('280000')
+        saved['input']['standardMode']='auto'
+        page.locator('#simFile').set_input_files({'name':'auto.json','mimeType':'application/json','buffer':json.dumps(saved).encode()})
+        expect(page.locator('#standardMode')).to_have_value('auto')
+        page.locator('#setupNext').click()
+        expect(page.locator('#standardMode')).to_be_hidden()
         page.locator('#setupAll').click()
         expect(page.locator('#simResults')).to_be_visible()
         assert not errors,errors

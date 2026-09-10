@@ -21,7 +21,7 @@
           <p class="sim-hint" id="bonusLimitHint" hidden>支給月・金額を年3回まで入力できます。</p>
           <div class="sim-field prior-bonus" id="priorBonusWrap" hidden><label for="priorBonusStandard">前年4〜12月の標準賞与累計額（健康保険・円）</label><input id="priorBonusStandard" type="number" min="0" max="5730000" step="1000" value="0" inputmode="numeric"><p class="sim-hint">1〜3月支給分の上限判定に使用。初期値は0円です。当年の額面年収には加算しません。</p></div></div>
           <div class="gross-total-box"><span>額面年収</span><output id="derivedAnnualGross" for="monthlyGross">—</output><p id="grossFormula">月給 × 12 ＋ 賞与合計</p><p id="nonTaxAnnualHint" hidden></p></div>
-          <div class="sim-fields-two"><div class="sim-field"><label for="simPrefecture">協会けんぽの加入支部</label><select id="simPrefecture"></select></div><div class="sim-field"><label for="simAge">年齢</label><input id="simAge" type="number" min="20" max="64" step="1" value="30" inputmode="numeric"></div></div>
+          <div class="sim-fields-two"><div class="sim-field"><label for="simPrefecture">勤務先の所在地（都道府県）</label><select id="simPrefecture" aria-describedby="prefectureHint"></select><p class="sim-hint" id="prefectureHint">健康保険に登録された事業所の所在地を選択。本社一括加入などで勤務地と異なる場合は、実際の協会けんぽの加入支部に合わせてください。</p></div><div class="sim-field"><label for="simAge">年齢</label><input id="simAge" type="number" min="20" max="64" step="1" value="30" inputmode="numeric"></div></div>
           <details class="sim-conditions" id="dependentConditions"><summary>扶養条件 <span id="dependentSummary">なし</span></summary><div class="sim-inner">
             <p class="sim-hint">あなたが税法上扶養する、国内居住の配偶者以外の親族を入力してください。健康保険の扶養人数とは異なります。他の人が扶養控除を受ける親族は含めません。</p>
             <p class="sim-hint">年間の条件は2026年12月31日時点の年齢、年間合計所得62万円以下が対象です。所得は給与の額面収入とは異なります。生計を一にし、事業専従者でないことが前提です。</p>
@@ -89,6 +89,7 @@
           <p id="simEqualHint" class="sim-empty-state">この年収では差額がありません。</p>
           <p class="sim-footnote comparison-scope">変更は年間の所得税に反映します。通常月の源泉徴収額は現行制度のままです。</p>
         </div>
+        <p class="sim-summary-bottom" id="socialModelNote"></p>
         <p class="sim-summary-bottom" id="residentSummaryNote">通常月と年間の計算方法は異なります。年間は2026年分の所得税・翌年度の住民税・9月の社会保険料率による概算で、実際の年間振込総額ではありません。</p>
       </section>
       <section class="sim-card sim-live" aria-labelledby="simBreakdownHeading">
