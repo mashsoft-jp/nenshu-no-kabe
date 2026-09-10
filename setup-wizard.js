@@ -44,9 +44,14 @@ window.initSetupWizard = function ({validate}) {
     const target=result?document.querySelector('#simResults h2'):launch;if(result)target.tabIndex=-1;target.focus();target.scrollIntoView({block:'start'});
   }
   function next(){
-    if(!validate()){el('setupError').textContent=el('simError').textContent;el('setupError').hidden=false;
-      const invalid=[...panels[step].querySelectorAll('input,select')].find(c=>!c.checkValidity()||(c.type==='number'&&c.value===''));
-      if(invalid){for(let p=invalid.parentElement;p&&p!==panels[step];p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;invalid.focus();}return;}
+    const valid=validate();
+    const invalid=[...panels[step].querySelectorAll('input,select')].find(c=>!c.checkValidity()||(c.type==='number'&&c.value===''));
+    // Other steps may contain unfinished values after Back. Allow reaching them
+    // again; require the entire model to be valid only before showing results.
+    if(invalid||(!valid&&step===4)){
+      el('setupError').textContent=valid?'入力内容を確認してください。':el('simError').textContent;el('setupError').hidden=false;
+      if(invalid){for(let p=invalid.parentElement;p&&p!==panels[step];p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;invalid.focus();}return;
+    }
     if(step===4)leave(true);else{step++;show();}
   }
   el('setupNext').addEventListener('click',next);el('setupBack').addEventListener('click',()=>{step--;show();});el('setupAll').addEventListener('click',()=>leave());launch.addEventListener('click',()=>{enter();show();});
