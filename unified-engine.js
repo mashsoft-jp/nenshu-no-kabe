@@ -74,7 +74,7 @@
     taxConditions:Deductions.defaults(),previousTaxConditions:Deductions.defaults(),previousTaxMode:'same',
     dependents:emptyDependents(),previousDependents:emptyDependents(),previousDependentMode:'same',
     withholdingDependentMode:'same',withholdingDependents:0,
-    monthlyGross:500000,annualGross:6000000,bonuses:[],nonTax:0,age:30,prefecture:'東京都',employment:50,
+    monthlyGross:500000,annualGross:6000000,bonuses:[],nonTax:0,age:30,prefecture:'東京都',employment:50,payType:'employee',
     standardMode:'auto',healthStandard:500000,pensionStandard:500000,priorBonusStandard:0,
     socialMode:'auto',socialAnnual:881400,residentMode:'estimate',residentAnnual:307200,
     monthlyResidentMode:'estimate',residentCollectionMode:'split',residentMonthly:25600,previousSalary:6000000,previousSocial:867600,other:0
@@ -103,6 +103,8 @@
     integer(x.nonTax,0,x.monthlyGross,'月給に含む非課税通勤手当（円）');
     integer(x.age,20,64,'年齢');
     if(!Monthly.healthRates.some(([p])=>p===x.prefecture))throw new Error('協会けんぽの加入支部を選んでください。');
+    if(!['employee','officer','custom'].includes(x.payType??'custom'))throw new Error('報酬の区分が不正です。');
+    if(x.payType==='officer'&&x.employment!==0)throw new Error('役員報酬のみの場合は雇用保険を0にしてください。');
     if(![0,50,60].includes(x.employment))throw new Error('雇用保険の区分が不正です。');
     if(!['auto','manual'].includes(x.standardMode))throw new Error('標準報酬月額の設定が不正です。');
     if(x.standardMode==='manual'){
@@ -247,7 +249,7 @@
     if(doc?.format==='tedori-policy'&&doc.version===1){
       const d=Base.validateDocument(doc);x={...defaultInput(),...d.input,monthlyGross:Math.floor(d.input.annualGross/12),bonuses:[]};
       x.annualGross=annualGross(x);legacy=true;
-    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5,6].includes(doc.version)){
+    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5,6,7].includes(doc.version)){
       x=Base.clone(doc.input);
       if(doc.version===2){
         // Preserve old annual/monthly independence, rather than changing saved results.
@@ -262,8 +264,10 @@
     }
     if(doc.version<5){x.taxConditions=Deductions.defaults();x.previousTaxConditions=Deductions.defaults();x.previousTaxMode='same';deductionLegacy=true;}
     if(doc.version<6&&x.monthlyResidentMode==='none')throw new Error('旧設定の住民税月額モードが不正です。');
+    if(doc.version<7)x.payType=x.employment===0?'custom':'employee';
+    else if(!['employee','officer','custom'].includes(x.payType))throw new Error('報酬の区分を含む設定JSONを選んでください。');
     validateInput(x);Base.validatePolicy(doc.policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
-    return {format:'nenshu-no-kabe',version:6,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
+    return {format:'nenshu-no-kabe',version:7,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
   }
   return {...Base,MAX_MONTHLY,MIN_MONTHLY,defaultInput,validateInput,bonusTotal,annualGross,
     Deductions,previousTaxConditions,salaryIncome2025,dependentKeys,emptyDependents,dependentAmounts,withholdingCount,previousFamily,salaryAdjustment,familyResidentTax,

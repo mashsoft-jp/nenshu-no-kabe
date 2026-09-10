@@ -63,7 +63,7 @@ with sync_playwright() as p:
         # Policy changes share family assumptions and do not alter monthly withholding.
         page.locator('#simEditorSummary').click();page.locator('#simExampleThreshold').click()
         expect(page.locator('#monthlyTaxDetail')).to_contain_text('所得税等 7,920円')
-        saved=save(page);check(saved['version']==6,'v5 saved')
+        saved=save(page);check(saved['version']==7,'v5 saved')
         check(saved['input']['dependents']['young']==1,'current family saved')
         check(saved['input']['previousDependents']['specific']==1,'previous family saved')
         page.locator('#dependent_young').fill('0');load(page,saved)

@@ -11,6 +11,7 @@
       <section class="sim-card input-card">
         <div class="sim-card-title"><h2>給与条件</h2><button id="simResetInputs" type="button" class="sim-link-button">初期値に戻す</button></div>
         <form id="simConditions" novalidate>
+          <div class="sim-field"><label for="payType">報酬の区分</label><select id="payType"><option value="employee">従業員の給与（雇用保険あり）</option><option value="officer">代表取締役・役員報酬のみ（雇用保険なし）</option><option value="custom">兼務役員・その他（雇用保険を個別指定）</option></select><p class="sim-hint" id="payTypeHint">従業員は雇用保険ありを初期設定にします。加入対象外や兼務役員は個別指定を選んでください。</p></div>
           <div class="sim-field"><label for="monthlyGross">月給（額面・手当込み）</label><div class="sim-input-unit sim-income-input"><input id="monthlyGross" type="number" value="500000" min="80000" max="8333333" step="1" inputmode="numeric" aria-describedby="monthlyGrossHint"><span>円</span></div>
           <input id="monthlySlider" type="range" min="80000" max="2000000" step="1000" value="500000" aria-label="月給の調整"><div class="sim-income-caption"><span>8万円</span><span>200万円</span></div>
           <div class="sim-presets"><button type="button" data-monthly="250000">25万円</button><button type="button" data-monthly="300000">30万円</button><button type="button" data-monthly="400000">40万円</button><button type="button" data-monthly="500000">50万円</button></div>

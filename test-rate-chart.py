@@ -149,7 +149,7 @@ with sync_playwright() as p:
         with page.expect_download() as dl:
             page.locator('#simSave').click()
         doc = json.loads(Path(dl.value.path()).read_text())
-        check(doc['format'] == 'nenshu-no-kabe' and doc['version'] == 6, 'v5 settings schema')
+        check(doc['format'] == 'nenshu-no-kabe' and doc['version'] == 7, 'v5 settings schema')
         for bs in [[{'upper': None, 'rateBp': 0}], [{'upper': None, 'rateBp': 10000}],
                    [{'upper': 100000000, 'rateBp': 4000}, {'upper': None, 'rateBp': 2000}],
                    [{'upper': (i+1)*1000 if i<19 else None, 'rateBp': (i%3)*1000} for i in range(20)]]:
