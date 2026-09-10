@@ -548,8 +548,8 @@
         point.append(svgNode('title',{},'第'+(i+1)+'段階の上限 '+man(b.upper)+'。左右にドラッグして変更。'));
         svg.append(point);
       }});
-      el('simGraphHint').textContent='横軸は課税所得です。緑の丸を左右にドラッグして境目を変更。各段階の数字や下のスライダーからも調整できます。';
-      svg.setAttribute('aria-label','課税所得別の所得税率。境目は編集欄または緑の丸で変更できます。');
+      el('simGraphHint').textContent='横軸は課税所得です。境界にある丸を左右にドラッグして境目を変更。各段階の数字や下のスライダーからも調整できます。';
+      svg.setAttribute('aria-label','課税所得別の所得税率。境目は編集欄または境界にある丸で変更できます。');
     } else if(graphMode==='net') {
       const a=data.map(c=>[c.gross,c.current.net]),b=data.map(c=>[c.gross,c.changed.net]);
       svg.append(svgNode('path',{d:linePath(b)+linePath([...a].reverse()).replace(/^M/,'L')+'Z',fill:'var(--sim-accent)','fill-opacity':.09,stroke:'none'}));
@@ -558,17 +558,17 @@
     } else {
       const positive=data.map(c=>[c.gross,Math.max(0,c.delta)]),negative=data.map(c=>[c.gross,Math.min(0,c.delta)]);
       const close=` L${sx(xMax)} ${sy(0)} L${sx(xMin)} ${sy(0)} Z`;
-      svg.append(svgNode('path',{d:linePath(positive)+close,fill:'var(--sim-accent)','fill-opacity':.12}));
+      svg.append(svgNode('path',{d:linePath(positive)+close,fill:'var(--net)','fill-opacity':.12}));
       svg.append(svgNode('path',{d:linePath(negative)+close,fill:'var(--sim-down)','fill-opacity':.12}));
       svg.append(svgNode('line',{x1:left,y1:sy(0),x2:x1,y2:sy(0),stroke:'var(--sim-current)','stroke-width':1.5,'stroke-dasharray':'5 5'}));
-      svg.append(svgNode('path',{d:linePath(positive),fill:'none',stroke:'var(--sim-accent)','stroke-width':2.3}));
+      svg.append(svgNode('path',{d:linePath(positive),fill:'none',stroke:'var(--net)','stroke-width':2.3}));
       svg.append(svgNode('path',{d:linePath(negative),fill:'none',stroke:'var(--sim-down)','stroke-width':2.3}));
     }
     if(graphMode!=='rates') {
       const g=input.annualGross;
       if(g>=xMin&&g<=xMax){
         svg.append(svgNode('line',{x1:sx(g),y1:top,x2:sx(g),y2:y1,stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'3 5',opacity:.5}));
-        const vals=graphMode==='net'?[[lastComparison.current.net,'var(--sim-current)'],[lastComparison.changed.net,'var(--sim-accent)']]:[[lastComparison.delta,lastComparison.delta>=0?'var(--sim-accent)':'var(--sim-down)']];
+        const vals=graphMode==='net'?[[lastComparison.current.net,'var(--sim-current)'],[lastComparison.changed.net,'var(--sim-accent)']]:[[lastComparison.delta,lastComparison.delta>=0?'var(--net)':'var(--sim-down)']];
         vals.forEach(([value,color])=>svg.append(svgNode('circle',{cx:sx(g),cy:sy(value),r:4.5,fill:'var(--panel)',stroke:color,'stroke-width':2})));
         svg.append(svgNode('text',{x:Math.min(x1-4,Math.max(left+4,sx(g))),y:top-7,fill:'var(--text)','font-size':11,'text-anchor':sx(g)>x1-45?'end':sx(g)<left+45?'start':'middle'},man(g)));
       }
@@ -578,7 +578,7 @@
     el('simGraphLegendRight').textContent=graphMode==='rates'?'復興特別所得税を除く':graphMode==='delta'?'0円＝現行制度と同じ':'賞与を固定・月給を変更';
     const legend=document.querySelector('.sim-legend-series');legend.replaceChildren();
     const legendItem=(text,cls)=>{const span=document.createElement('span');span.className='sim-series-label';const line=document.createElement('i');line.className='sim-series-line '+cls;span.append(line,document.createTextNode(text));legend.append(span);return line;};
-    if(graphMode==='delta'){legendItem('増加（＋）','');legendItem('減少（−）','').style.borderTopColor='var(--sim-down)';}
+    if(graphMode==='delta'){legendItem('増加（＋）','').style.borderTopColor='var(--net)';legendItem('減少（−）','').style.borderTopColor='var(--sim-down)';}
     else{legendItem('現行制度','current');legendItem('仮想制度','');}
   }
   function graphPoint(event) {
