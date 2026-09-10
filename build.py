@@ -5,7 +5,7 @@ import base64
 import re
 ROOT=Path(__file__).resolve().parent
 logo_src='data:image/png;base64,'+base64.b64encode((ROOT/'assets/logo.png').read_bytes()).decode('ascii')
-css='\n'.join((ROOT/n).read_text(encoding='utf-8') for n in ['base.css','policy.css','unified.css','rate-chart.css','setup-wizard.css','theme.css'])
+css='\n'.join((ROOT/n).read_text(encoding='utf-8') for n in ['base.css','policy.css','unified.css','rate-chart.css','setup-wizard.css','theme.css','result-layout.css'])
 view=(ROOT/'unified-view.html').read_text(encoding='utf-8')
 scripts='\n'.join('<script>\n'+(ROOT/n).read_text(encoding='utf-8')+'\n</script>' for n in ['monthly-engine.js','policy-engine.js','deduction-engine.js','unified-engine.js','setup-wizard.js','unified-ui.js','rate-chart.js'])
 html='''<!doctype html>

@@ -28,7 +28,7 @@ with sync_playwright() as p:
         page.on('pageerror',lambda e:errors.append(str(e)))
         page.on('request',lambda r:requests.append(r.url))
         page.set_content((ROOT/'index.html').read_text())
-        page.locator('#setupAll').click()
+        page.locator('#setupAll').click();page.locator('#breakdownItems').evaluate('(e)=>e.open=true')
         initial=save(page)
         page.locator('#dependentConditions>summary').focus();page.keyboard.press('Enter')
         expect(page.locator('#dependent_young')).to_be_visible()
@@ -63,7 +63,7 @@ with sync_playwright() as p:
         # Policy changes share family assumptions and do not alter monthly withholding.
         page.locator('#simEditorSummary').click();page.locator('#simExampleThreshold').click()
         expect(page.locator('#monthlyTaxDetail')).to_contain_text('所得税等 7,920円')
-        saved=save(page);check(saved['version']==7,'v5 saved')
+        saved=save(page);check(saved['version']==8,'v5 saved')
         check(saved['input']['dependents']['young']==1,'current family saved')
         check(saved['input']['previousDependents']['specific']==1,'previous family saved')
         page.locator('#dependent_young').fill('0');load(page,saved)
