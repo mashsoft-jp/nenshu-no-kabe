@@ -59,6 +59,7 @@ with sync_playwright() as p:
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('request', lambda r: requests.append(r.url))
         page.set_content(HTML)
+        page.locator('#setupAll').click()
         expect(page.locator('#rateOverview')).to_be_hidden()
         expect(page.locator('#simPolicyComparison')).to_be_hidden()
         page.locator('#simEditorSummary').click()
@@ -148,7 +149,7 @@ with sync_playwright() as p:
         with page.expect_download() as dl:
             page.locator('#simSave').click()
         doc = json.loads(Path(dl.value.path()).read_text())
-        check(doc['format'] == 'nenshu-no-kabe' and doc['version'] == 5, 'v5 settings schema')
+        check(doc['format'] == 'nenshu-no-kabe' and doc['version'] == 6, 'v5 settings schema')
         for bs in [[{'upper': None, 'rateBp': 0}], [{'upper': None, 'rateBp': 10000}],
                    [{'upper': 100000000, 'rateBp': 4000}, {'upper': None, 'rateBp': 2000}],
                    [{'upper': (i+1)*1000 if i<19 else None, 'rateBp': (i%3)*1000} for i in range(20)]]:

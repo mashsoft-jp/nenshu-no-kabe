@@ -97,7 +97,8 @@ const Tedori = (() => {
     const health = roundHalfDownRatio(std.health*healthRate,20000);
     // Round health+care together as in the Kyokai table, then allocate the difference to care.
     const care = roundHalfDownRatio(std.health*(healthRate+careRate),20000)-health;
-    const child = roundHalfDownRatio(std.health*23,20000);
+    // User-selected payroll convention: round child support up independently to yen.
+    const child = Math.ceil(std.health*23/20000);
     const pension = roundHalfDownRatio(std.pension*1830,20000);
     const employment = roundHalfDownRatio(x.gross*x.employment,10000);
     const social=health+care+child+pension+employment;

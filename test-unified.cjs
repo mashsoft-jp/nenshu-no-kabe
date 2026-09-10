@@ -84,3 +84,34 @@ require('./test-resident-notice.cjs');
 require('./test-dependents.cjs');
 
 require('./test-deductions.cjs');
+
+// User-selected child support rounding: independent yen ceiling, not half-down.
+// 88,000 × .0023 / 2 = 101.2; 110,000 => 126.5; 300,000 => 345 exactly.
+for(const [gross,expected] of [[88000,102],[110000,127],[300000,345]]) {
+ const result=U.calculate(input({monthlyGross:gross,bonuses:[{month:6,gross}]}));
+ equal(result.social.monthlyParts.child,expected,'child salary ceiling');
+ equal(result.social.bonusParts.child,expected,'child bonus ceiling');
+ equal(result.social.parts.child,expected*13,'round each payment before annual sum');
+ equal(B.calculate({...B.defaultInput(),annualGross:gross*12}).social.parts.child,expected*12,'legacy annual ceiling');
+ equal(M.calculate({gross,nonTax:0,age:30,prefecture:'東京都',other:0,employment:0,dependents:0,standardMode:'auto',residentMode:'manual',residentMonthly:0}).child,expected,'legacy monthly ceiling');
+}
+equal(U.calculate(input({bonuses:[{month:6,gross:999}]})).social.bonusParts.child,0,'zero standard bonus remains zero');
+equal(U.calculate(input({bonuses:[{month:6,gross:5000},{month:6,gross:5000}]})).social.bonusParts.child,12,'same-month combined base 10,000 gives 11.5 => 12');
+equal(U.calculate(input({bonuses:[{month:6,gross:6000000},{month:12,gross:100000}]})).social.bonusParts.child,6590,'FY cap 5,730,000 gives 6589.5 => 6590; exhausted cap gives zero');
+console.log('PASS child support ceiling boundaries, annual sum, bonus grouping and cap');
+
+// Monthly withholding choice must never erase annual resident tax.
+for(const residentMode of ['manual','estimate']) {
+ const withTax=input({residentMode,residentAnnual:240500,monthlyResidentMode:'manual',residentMonthly:20000});
+ const withoutTax={...withTax,monthlyResidentMode:'none'};
+ const before=U.calculate(withTax),after=U.calculate(withoutTax);
+ equal(after.monthly.residentTax,0,'no monthly resident withholding');
+ equal(after.monthly.net,before.monthly.net+20000,'only monthly resident deduction removed');
+ equal(after.resident,before.resident,'annual resident unchanged');equal(after.net,before.net,'annual net unchanged');
+ const doc6={format:'nenshu-no-kabe',version:6,input:withoutTax,policy:U.currentPolicy(),graphMax:12000000};
+ equal(U.validateDocument(doc6).input,withoutTax,'v6 no withholding roundtrip');
+ assert.throws(()=>U.validateDocument({...doc6,version:5}));
+ assert.throws(()=>U.calculate({...withoutTax,monthlyResidentMode:'invalid'}));
+ equal(U.validateDocument({...doc6,version:5,input:withTax}).input,withTax,'v5 preserves monthly setting');
+}
+console.log('PASS no resident withholding, annual independence, JSON migration and validation');
