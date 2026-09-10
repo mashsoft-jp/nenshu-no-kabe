@@ -105,3 +105,5 @@ JSON version 7にpayType（employee/officer/custom）を保存。旧version 1〜
 確認した一次資料（2026-09-10閲覧）：協会けんぽ令和8年度保険料率のお知らせ https://www.kyoukaikenpo.or.jp/lp/2026hokenryou/ 、奈良支部評議会（一括適用は本社所在地） https://www.kyoukaikenpo.or.jp/file/R53kaigijiroku.pdf 、日本年金機構の標準報酬説明 https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20150515-01.html 、アコム健康保険組合の50等級・保険料説明 https://acom-kenpo.or.jp/health-insurance-top/hokenryou/ 。計算制度・料率変更はなし。
 
 検証：ビルド・既存月次／制度／統合計算テスト成功。test-setup-wizard.pyで所在地表示・指定欄の開閉・結果注意書きを追加確認し、test-unified-ui.pyの135チェックとともに5画面幅で成功。公開反映は未実施。
+
+PR #8 Bugbot対応：設定JSONの読み込み成功後にステップ入力へ通知し、標準報酬月額を手入力する設定なら指定欄を開き、自動設定なら閉じる。非同期のファイル選択時点ではなく、入力欄への反映後に同期する。手入力280,000円と自動設定をステップ入力中に読み込む回帰テストを追加。

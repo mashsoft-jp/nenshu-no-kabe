@@ -711,7 +711,7 @@
       if(file.size>200000)throw new Error('設定ファイルは200KB以下にしてください。');
       const doc=P.validateDocument(JSON.parse(await file.text()));
       input=doc.input;policy=doc.policy;graphMax=doc.graphMax;selected=0;history=[P.currentPolicy()];commit();
-      populateConditions();renderEditor();syncBasic();update();notify((doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':doc.residentLegacy?'旧設定の年額・月額を別々に保持しました。月額を連動するには「通知書の年額から算出」を選んでください。':'設定を読み込みました。')+(doc.dependentLegacy?' 旧設定の扶養は0人として保持しました。':'')+(doc.deductionLegacy?' 旧設定の追加控除はなしとして保持しました。':''));
+      populateConditions();renderEditor();syncBasic();update();el('simConditions').dispatchEvent(new Event('settingsloaded'));notify((doc.legacy?'旧設定を月給（年収÷12・1円未満切捨て）・賞与なしに変換して読み込みました。':doc.residentLegacy?'旧設定の年額・月額を別々に保持しました。月額を連動するには「通知書の年額から算出」を選んでください。':'設定を読み込みました。')+(doc.dependentLegacy?' 旧設定の扶養は0人として保持しました。':'')+(doc.deductionLegacy?' 旧設定の追加控除はなしとして保持しました。':''));
     } catch(error){notify('読み込みできません：'+error.message);}
     el('simFile').value='';
   });

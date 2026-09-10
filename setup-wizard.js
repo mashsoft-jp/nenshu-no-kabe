@@ -62,6 +62,6 @@ window.initSetupWizard = function ({validate}) {
   el('setupNext').addEventListener('click',next);el('setupBack').addEventListener('click',()=>{step--;show();});el('setupAll').addEventListener('click',()=>leave());launch.addEventListener('click',()=>{enter();show();});
   form.addEventListener('keydown',e=>{if(active&&e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='file'){e.preventDefault();next();}});
   form.addEventListener('input',()=>{if(active)el('setupError').hidden=true;});
-  el('simFile').addEventListener('change',()=>{if(active){step=0;show(false);}});
+  form.addEventListener('settingsloaded',()=>{if(active){standardOptions.open=el('standardMode').value==='manual';step=0;show(false);}});
   enter();
 };
