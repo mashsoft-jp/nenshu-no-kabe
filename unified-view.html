@@ -102,10 +102,22 @@
       </section>
       <details class="sim-card sim-tax-options" id="simEditor">
 <summary id="simEditorSummary">
-<span class="sim-options-label"><span class="sim-options-title"><span class="sim-locked">オプション</span><span>所得税の変更</span></span><span class="sim-options-description" id="simOptionDescription">税率・課税所得の上限・段階数・基礎控除を変更できます。</span></span>
+<span class="sim-options-label"><span class="sim-options-title"><span class="sim-locked">オプション</span><span>所得税の変更</span></span><span class="sim-options-description" id="simOptionDescription">基礎控除や税率を変えて、年間手取りの差を比較できます。</span></span>
 <span class="badge" id="simOptionState">未変更</span>
 </summary>
 <div class="sim-editor-content">
+<details class="basic-control" id="simBasicDetails" open><summary>基礎控除を変えて手取りを比較</summary><div class="sim-inner">
+<p class="sim-hint">2025年分の160万円は基礎控除95万円＋給与所得控除65万円（低所得帯の場合）。2026年分は104万円＋74万円で178万円です。この比較は2026年分を基準に、基礎控除だけを変更します。</p>
+<div class="sim-field"><label for="simBasicMode">所得税の基礎控除</label><select id="simBasicMode"><option value="current">2026年分の現行制度のまま</option><option value="add">現行の各控除額に一律加算・減算</option><option value="flat">全所得帯で一律の額に変更</option></select></div>
+<div class="sim-field" hidden="" id="simBasicAmountWrap"><label for="simBasicAmount" id="simBasicAmountLabel">控除の変更額（万円）</label><input id="simBasicAmount" inputmode="decimal" max="1000" min="-1000" step="0.1" type="number" value="0"/></div>
+<div class="basic-presets"><button type="button" data-basic-flat="48">全所得帯で48万円</button><button type="button" data-basic-flat="95">全所得帯で95万円</button><button type="button" data-basic-flat="104">全所得帯で104万円</button><button type="button" id="basicRestore">基礎控除を現行に戻す</button></div>
+<p class="sim-hint">上の金額ボタンは全所得帯に同じ控除額を適用する仮想制度です。2024年・2025年の制度全体を再現するものではありません。</p>
+<p class="sim-hint" id="simBasicNote">現行は合計所得489万円以下で104万円、655万円以下で67万円など、所得に応じて変わります。</p>
+<p class="sim-hint" style="margin-top:9px">給与所得控除・住民税の制度は変えません。社会保険料控除もあるため、「基礎控除＋74万円」が全員の課税開始年収になるわけではありません。</p>
+<div id="basicComparison" class="basic-result" aria-live="polite"></div>
+<p class="sim-hint">住民税・社会保険の加入条件・家族側の扶養判定は変更しません。通常月の源泉徴収も固定です。「月平均の差」は年間差額÷12で、毎月の振込額の変化ではありません。下の税率も変更すると、その影響を含む合計差額になります。</p>
+<a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1800.htm" target="_blank" rel="noopener noreferrer">国税庁：所得税がかからない給与収入</a>
+</div></details>
 <section class="rate-overview" id="rateOverview" aria-labelledby="rateHeading">
 <div class="sim-card-title"><h2 id="rateHeading">税率設定</h2><span class="badge green" id="simStageBadge">7段階</span></div>
 <svg id="rateChart" role="img" tabindex="0" viewBox="0 0 800 330" aria-label="課税所得ごとの税率" aria-describedby="rateChartHint"></svg>
@@ -129,12 +141,7 @@
 </div>
 <div class="sim-editor-footer"><button id="simUndo" type="button">1つ前に戻す</button><button id="simRestore" type="button">税率・控除を現行に戻す</button></div>
 <p class="sim-footnote">＋でその段階を二分割、−で段階を削除。最後は常に上限なし。1〜20段階・税率0〜100%に対応。</p>
-<details class="sim-more" id="simBasicDetails"><summary>基礎控除の変更</summary><div class="sim-inner">
-<div class="sim-field"><label for="simBasicMode">所得税の基礎控除</label><select id="simBasicMode"><option value="current">2026年分の現行制度のまま</option><option value="add">現行の各控除額に一律加算・減算</option><option value="flat">全所得帯で一律の額に変更</option></select></div>
-<div class="sim-field" hidden="" id="simBasicAmountWrap"><label for="simBasicAmount" id="simBasicAmountLabel">控除の変更額（万円）</label><input id="simBasicAmount" inputmode="decimal" max="1000" min="-1000" step="0.1" type="number" value="0"/></div>
-<p class="sim-hint" id="simBasicNote">現行は合計所得489万円以下で104万円、655万円以下で67万円など、所得に応じて変わります。</p>
-<p class="sim-hint" style="margin-top:9px">給与所得控除・住民税の制度は変えません。社会保険料控除もあるため、「基礎控除＋74万円」が全員の課税開始年収になるわけではありません。</p>
-</div></details>
+
 <details class="sim-more"><summary>現行税率（編集不可）</summary><div class="sim-inner" id="simCurrentReference"></div></details>
 <p class="sim-footnote">閉じても設定は保持されます。取り消す場合は「税率・控除を現行に戻す」を押してください。</p>
 <a class="sim-results-return" href="#simResults">手取りの結果へ戻る ↑</a>

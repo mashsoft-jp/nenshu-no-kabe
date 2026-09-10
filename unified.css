@@ -33,3 +33,7 @@ body.policy-mode #copyButton{display:inline-flex}
 .tax-group .sim-hint{margin:10px 0}
 
 .tax-group input[type=text]{width:100%;min-width:0;min-height:39px;font-size:13px;padding:8px 10px;border:1px solid #36485e;border-radius:10px;background:#0e1622;color:var(--text)}
+
+.basic-control{grid-column:1/-1;border:1px solid #305c51;border-radius:12px;margin-bottom:20px;background:#122322;min-width:0}.basic-control>summary{font-size:20px;font-weight:650;padding:20px;cursor:pointer}.basic-control>.sim-inner{padding:0 20px 20px}.basic-control .sim-hint{margin-bottom:12px}.basic-control .sim-field{max-width:550px}.basic-control input[type=number]{font-size:24px;margin:8px 0 15px}.basic-presets{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.basic-presets button{min-height:44px}.basic-presets button[aria-pressed=true]{border-color:var(--net);color:var(--net)}.basic-result{padding:15px 0;margin:12px 0;border-block:1px solid var(--line);font-size:16px;line-height:1.9;overflow-wrap:anywhere}.basic-control a{font-size:12px}@media(max-width:400px){.basic-control>summary{padding:14px;font-size:18px}.basic-control>.sim-inner{padding:0 14px 14px}}
+
+.basic-result>div{padding:8px 0}.basic-result span{display:block;font-size:12px;color:var(--muted)}.basic-result strong{display:block;font-size:16px}.basic-result>div:nth-child(4) strong{font-size:25px;color:var(--net)}

@@ -132,3 +132,19 @@ for(const employment of [0,50,60]){
  equal(migrated.input.payType,employment===0?'custom':'employee','old rate does not invent officer status');
 }
 console.log('PASS pay type, salary/bonus insurance, JSON migration and invalid settings');
+
+// Independent yen expectations for direct basic-deduction comparison.
+// Salary 4.8m -> income 3.4m; no social/resident/other deductions.
+const basicInput=input({monthlyGross:400000,socialMode:'manual',socialAnnual:0,residentMode:'manual',residentAnnual:0});
+const basicCurrent=U.calculate(basicInput);
+equal(basicCurrent.national.annual,141400,'138,500 + 2,908; final 100-yen floor');
+const basicAdd=U.compare(basicInput,{...U.currentPolicy(),basicMode:'add',basicAmount:100000});
+equal(basicAdd.changed.national.annual,131100,'128,500 + 2,698; final 100-yen floor');equal(basicAdd.delta,10300,'100,000 deduction at 10% plus surtax and final floor');
+const basicFlat=U.compare(basicInput,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000});
+equal(basicFlat.changed.national.annual,150500,'147,500 + 3,097; final 100-yen floor');equal(basicFlat.delta,-9100,'950,000 fixed amount is not the 2025 system');
+equal(basicAdd.current.monthly,basicAdd.changed.monthly,'annual change never changes source withholding');
+equal(basicAdd.current.social,basicAdd.changed.social,'social unchanged');equal(basicAdd.current.resident,basicAdd.changed.resident,'resident unchanged');
+equal(U.incomeTax(950000,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000}).annual,0,'deduction boundary');
+equal(U.incomeTax(950999,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000}).annual,0,'taxable thousand-yen floor');
+equal(U.incomeTax(951000,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000}).annual,0,'50 yen + 1 yen surtax; final 100-yen floor');
+console.log('PASS direct basic deduction hand calculations and boundaries');
