@@ -178,7 +178,6 @@
     el('nonTaxAnnualHint').textContent=valid?'課税対象の給与収入 '+yen(input.annualGross-input.nonTax*12):'';
     el('monthlySlider').max=Math.max(2000000,Number.isFinite(input.monthlyGross)?input.monthlyGross:2000000);
     if(Number.isFinite(input.monthlyGross))el('monthlySlider').value=input.monthlyGross;
-    document.querySelectorAll('[data-monthly]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.monthly===input.monthlyGross)));
   }
 
   function syncResidentSelection(id) {
@@ -668,7 +667,6 @@
     input.bonuses.push({month,gross:0});input.annualGross=P.annualGross(input);renderBonusRows();growRange();update();
     el('bonusRows').lastElementChild.querySelector('input').focus({preventScroll:true});
   });
-  document.querySelectorAll('[data-monthly]').forEach(b=>b.addEventListener('click',()=>{readConditions();input.monthlyGross=+b.dataset.monthly;input.annualGross=P.annualGross(input);growRange();populateConditions();update();}));
   el('simResetInputs').addEventListener('click',()=>{input=P.defaultInput();graphMax=12000000;populateConditions();update();notify('給与条件を初期値に戻しました。所得税の変更設定は保持しています。');});
   el('simGraphMax').addEventListener('change',()=>{graphMax=+el('simGraphMax').value;growRange();syncConditions();update();});
   el('simBracketRows').addEventListener('input',e=>{

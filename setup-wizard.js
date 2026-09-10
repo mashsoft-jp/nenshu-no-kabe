@@ -11,8 +11,8 @@ window.initSetupWizard = function ({validate}) {
   function remember(node,index){const marker=document.createComment('setup original position');node.before(marker);placements.push({node,marker,index});}
   remember(el('payType').closest('.sim-field'),0);
   remember(el('monthlyGross').closest('.sim-field'),0);
-  remember(form.querySelector('.bonus-section'),0);remember(form.querySelector('.gross-total-box'),0);
   remember(el('nonTax').closest('.sim-field'),0);remember(el('otherDeduction').closest('.sim-field'),0);
+  remember(form.querySelector('.bonus-section'),0);remember(form.querySelector('.gross-total-box'),0);
   remember(el('simAge').closest('.sim-fields-two'),1);
   ['simEmployment','simSocialMode'].forEach(id=>remember(el(id).closest('.sim-field'),1));
   ['simSocialManualWrap'].forEach(id=>remember(el(id),1));

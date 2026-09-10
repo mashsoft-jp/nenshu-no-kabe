@@ -25,7 +25,7 @@ input[type=number],select,.tax-group input[type=text]{background:#fff;border-col
 .badge.green{background:#eaf7fc;border-color:#9acbdf;color:#006c94}
 .badge.amber,.model-note,.notice,.sim-note{background:#fff8e9;border-color:#ddc48d;color:#71551d}
 .notice strong,.sim-note strong{color:#71500a}
-.sim-presets button[aria-pressed=true],.sim-bracket-row.is-selected,.sim-detail-switch button[aria-pressed=true]{background:#eaf7fc;border-color:var(--brand-blue);color:#006b94}
+.sim-bracket-row.is-selected,.sim-detail-switch button[aria-pressed=true]{background:#eaf7fc;border-color:var(--brand-blue);color:#006b94}
 .gross-total-box,.rate-chart-selection{background:#eaf7fc;border-color:#9bc9dd}
 .sim-summary,.unified-summary{border-color:#8ebdd1}
 .sim-summary-top,.result-top{background:linear-gradient(115deg,#e6f7ff,#fff)}
