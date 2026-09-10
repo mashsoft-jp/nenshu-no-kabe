@@ -301,15 +301,23 @@
     const {current:a,changed:b,delta}=c,m=a.monthly,modified=hasPolicyChange();
     classValue('simDelta',signed(delta),delta);
     const basicResult=el('basicComparison');basicResult.replaceChildren();
-    for(const [label,value] of [['基礎控除（現行 → 変更後）',yen(a.national.basic)+' → '+yen(b.national.basic)],['年間所得税等',yen(a.national.annual)+' → '+yen(b.national.annual)],['年間手取り',yen(a.net)+' → '+yen(b.net)],['年間手取りの差',signed(delta)],['月平均の差（年額÷12）',signed(delta/12)]]){
+    for(const [label,value] of [['給与所得控除（現行 → 変更後）',yen(a.salaryDeduction)+' → '+yen(b.salaryDeduction)],['基礎控除（現行 → 変更後）',yen(a.national.basic)+' → '+yen(b.national.basic)],['年間所得税等',yen(a.national.annual)+' → '+yen(b.national.annual)],['年間手取り',yen(a.net)+' → '+yen(b.net)],['年間手取りの差',signed(delta)],['月平均の差（年額÷12）',signed(delta/12)]]){
       const row=document.createElement('div'),title=document.createElement('span'),amount=document.createElement('strong');title.textContent=label;amount.textContent=value;row.append(title,amount);basicResult.append(row);
     }
     document.querySelectorAll('[data-basic-flat]').forEach(button=>button.setAttribute('aria-pressed',String(policy.basicMode==='flat'&&policy.basicAmount===+button.dataset.basicFlat*10000)));
     el('simPolicyComparison').hidden=!modified;
     el('simOptionState').textContent=modified?'変更中':'未変更';el('simOptionState').classList.toggle('green',modified);
-    el('simOptionDescription').textContent=modified?'変更した所得税で比較中です。閉じても設定は保持されます。':'基礎控除や税率を変えて、年間手取りの差を比較できます。';
-    el('simFloatingLabel').textContent=modified?'所得税変更による年間増減':'年間手取り（賞与込み）';
-    classValue('simFloatingDelta',modified?signed(delta):yen(a.net),modified?delta:1);
+    el('simOptionDescription').textContent=modified?'変更した所得税で比較中です。閉じても設定は保持されます。':'基礎控除・給与所得控除や税率を変えて、年間手取りの差を比較できます。';
+    el('stickyMonthly').textContent=yen(m.net);
+    el('stickyAnnual').textContent=yen(modified?b.net:a.net);
+    el('stickyAnnualLabel').textContent=modified?'年間（控除・税率変更後）':'年間（賞与込み・現行）';
+    el('stickyAverage').textContent='月平均 '+yen((modified?b.net:a.net)/12);
+    const basicValue=policy.basicMode==='flat'?policy.basicAmount:b.national.basic;
+    el('basicSlider').max=Math.max(3000000,basicValue);el('basicSlider').value=basicValue;el('basicSliderValue').textContent=yen(basicValue);
+    const salaryValue=policy.salaryMode==='flat'?policy.salaryAmount:a.salaryDeduction;
+    el('salarySlider').max=Math.max(3000000,salaryValue);el('salarySlider').value=salaryValue;el('salarySliderValue').textContent=yen(salaryValue);
+    el('salaryAmount').value=salaryValue/10000;
+    el('salaryModeNote').textContent=policy.salaryMode==='flat'?'全ての年収に同じ額を適用（給与収入が上限）。住民税と通常月の源泉徴収は変更しません。':'現行制度の所得別控除額です。動かすと全ての年収で同じ額に変更します。';
     renderResidentNotice(c);
     el('monthlyNet').textContent=yen(m.net);el('monthlyNetRate').textContent='手取り率 '+(m.net/m.gross*100).toFixed(1)+'%';
     el('simCurrentNet').textContent=yen(a.net);el('simChangedNet').textContent=yen(b.net);
@@ -489,7 +497,7 @@
     const {annualGross,monthlyGross,...common}=input;
     const key=JSON.stringify({common,policy,graphMax});
     if(key!==chartCacheKey) {
-      chartData=P.sampleForInput(input,graphMax).map(x=>({gross:x.annualGross,...P.compare(x,policy)}));
+      chartData=P.sampleForInput(input,graphMax,220,policy).map(x=>({gross:x.annualGross,...P.compare(x,policy)}));
       chartCacheKey=key;
     }
     return chartData;
@@ -623,7 +631,7 @@
       el('basicComparison').textContent='入力内容を確認してください。';allValid=false;lastComparison=null;el('simError').textContent=error.message+' 正しい条件になるまで、結果の更新と保存を停止しています。';el('simError').hidden=false;el('simRoot').classList.add('sim-invalid');
       el('simTooltip').hidden=true;
       el('simEditorError').textContent=error.message;el('simEditorError').hidden=false;
-      el('simFloatingDelta').textContent='入力を確認';
+      el('stickyMonthly').textContent='入力を確認';el('stickyAnnual').textContent='—';el('stickyAverage').textContent='';
       el('simOptionState').textContent='入力エラー';
       el('simOptionDescription').textContent='入力内容を確認してください。正しい条件になるまで結果の更新を停止しています。';
       document.querySelectorAll('#simBracketRows .sim-bracket-row').forEach((row,i)=>{
@@ -639,7 +647,7 @@
   function download(contents,type,filename) {
     const blob=new Blob([contents],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   }
-  function documentForExport() {return {format:'nenshu-no-kabe',version:7,checkedAt:'2026-09-10',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
+  function documentForExport() {return {format:'nenshu-no-kabe',version:8,checkedAt:'2026-09-10',model:'unified-salary-bonus_2026-income-tax_fy2027-resident-tax_september-social-snapshot',input,policy,graphMax};}
 
   // A shortcut opens the optional editor explicitly; collapsing never resets a policy.
   document.querySelectorAll('[data-sim-open-editor]').forEach(link=>link.addEventListener('click',e=>{
@@ -681,11 +689,16 @@
   el('simRateSlider').addEventListener('input',()=>{policy.brackets[selected].rateBp=number('simRateSlider');refreshEditorNumbers();scheduleUpdate();});
   el('simBoundarySlider').addEventListener('change',commit);el('simRateSlider').addEventListener('change',commit);
   el('simUndo').addEventListener('click',undo);
-  el('simRestore').addEventListener('click',()=>{policy=P.currentPolicy();selected=0;commit();renderEditor();syncBasic();update();notify('仮想制度を現行と同じ税率・基礎控除に戻しました。');});
+  el('simRestore').addEventListener('click',()=>{policy=P.currentPolicy();selected=0;commit();renderEditor();syncBasic();update();notify('仮想制度を現行と同じ税率・控除に戻しました。');});
   el('simExampleThreshold').addEventListener('click',()=>{policy=P.currentPolicy();policy.brackets[0].upper=3000000;selected=0;commit();renderEditor();syncBasic();update();});
   el('simExampleRate').addEventListener('click',()=>{policy=P.currentPolicy();policy.brackets.forEach(b=>b.rateBp=Math.max(0,b.rateBp-100));selected=0;commit();renderEditor();syncBasic();update();});
   el('simExampleZero').addEventListener('click',()=>{policy=P.currentPolicy();policy.brackets.unshift({upper:500000,rateBp:0});selected=0;commit();renderEditor();syncBasic();update();});
   document.querySelectorAll('[data-basic-flat]').forEach(button=>button.addEventListener('click',()=>{policy.basicMode='flat';policy.basicAmount=+button.dataset.basicFlat*10000;syncBasic();commit();update();}));
+  el('basicSlider').addEventListener('input',()=>{policy.basicMode='flat';policy.basicAmount=+el('basicSlider').value;syncBasic();scheduleUpdate();});
+  el('salarySlider').addEventListener('input',()=>{policy.salaryMode='flat';policy.salaryAmount=+el('salarySlider').value;scheduleUpdate();});
+  el('salaryAmount').addEventListener('input',()=>{policy.salaryMode='flat';policy.salaryAmount=yenInput('salaryAmount');scheduleUpdate();});
+  ['basicSlider','salarySlider','salaryAmount'].forEach(id=>el(id).addEventListener('change',commit));
+  el('salaryRestore').addEventListener('click',()=>{policy.salaryMode='current';policy.salaryAmount=0;commit();update();});
   el('basicRestore').addEventListener('click',()=>{policy.basicMode='current';policy.basicAmount=0;syncBasic();commit();update();});
   el('simBasicMode').addEventListener('change',()=>{policy.basicMode=el('simBasicMode').value;policy.basicAmount=policy.basicMode==='flat'?1040000:0;syncBasic();commit();update();});
   el('simBasicAmount').addEventListener('input',()=>{policy.basicAmount=yenInput('simBasicAmount');scheduleUpdate();});
@@ -725,8 +738,8 @@
     const data=[...getChartData()];
     if(!data.some(c=>c.gross===input.annualGross))data.push({gross:input.annualGross,...P.compare(input,policy)});
     data.sort((a,b)=>a.gross-b.gross);
-    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）','住民税年額の根拠','通常月住民税（円）','住民税月額の根拠','通知書配分6月（参考・円）','通知書配分7月〜翌5月（参考・円）','2026年の扶養区分','通常月の源泉徴収人数','2025年の扶養区分','所得税扶養控除（円）','住民税扶養控除（概算用・円）','所得金額調整控除（円）','追加控除の条件（2026年）','追加控除の条件（2025年）','追加所得控除・所得税（円）','追加所得控除・住民税概算用（円）','所得税の適用税額控除（円）','区市町村民税の適用税額控除（円）','都道府県民税の適用税額控除（円）','ワンストップ申告特例分・区市町村（円）','ワンストップ申告特例分・都道府県（円）','報酬の区分'];
-    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable,input.residentMode==='manual'?'通知書等の対象年度・固定年額':'2027年度予測',c.current.monthly.residentTax,monthlyResidentLabel(),input.residentMode==='manual'&&input.monthlyResidentMode!=='none'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).june:'',input.residentMode==='manual'&&input.monthlyResidentMode!=='none'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).monthly:'',dependentText(input.dependents),P.withholdingCount(P.atAnnual(input,c.gross)),dependentText(P.previousFamily(input)),c.current.national.dependentDeduction,P.dependentAmounts(input.dependents).resident,c.current.incomeAdjustment,taxSettingsText(input.taxConditions),taxSettingsText(P.previousTaxConditions(input)),c.current.extra.national,c.current.extra.resident,c.current.national.appliedCredit,c.current.resident.wardCredit??'',c.current.resident.metroCredit??'',c.current.resident.wardOneStopCredit??'',c.current.resident.metroOneStopCredit??'',el('payType').selectedOptions[0].textContent]);
+    const header=['月給（円）','賞与額面合計（円）','額面年収（円）','現行手取り（円）','仮想手取り（円）','手取り増減（円）','社会保険料年額（円）','現行所得税等（円）','仮想所得税等（円）','住民税等年額（円）','現行基礎控除（円）','仮想基礎控除（円）','現行課税所得（円）','仮想課税所得（円）','住民税年額の根拠','通常月住民税（円）','住民税月額の根拠','通知書配分6月（参考・円）','通知書配分7月〜翌5月（参考・円）','2026年の扶養区分','通常月の源泉徴収人数','2025年の扶養区分','所得税扶養控除（円）','住民税扶養控除（概算用・円）','所得金額調整控除（円）','追加控除の条件（2026年）','追加控除の条件（2025年）','追加所得控除・所得税（円）','追加所得控除・住民税概算用（円）','所得税の適用税額控除（円）','区市町村民税の適用税額控除（円）','都道府県民税の適用税額控除（円）','ワンストップ申告特例分・区市町村（円）','ワンストップ申告特例分・都道府県（円）','報酬の区分','現行給与所得控除（円）','変更後給与所得控除（円）'];
+    const rows=data.map(c=>[c.current.monthly.gross,c.current.bonusGross,c.gross,c.current.net,c.changed.net,c.delta,c.current.social.annual,c.current.national.annual,c.changed.national.annual,c.current.resident.annual,c.current.national.basic,c.changed.national.basic,c.current.national.taxable,c.changed.national.taxable,input.residentMode==='manual'?'通知書等の対象年度・固定年額':'2027年度予測',c.current.monthly.residentTax,monthlyResidentLabel(),input.residentMode==='manual'&&input.monthlyResidentMode!=='none'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).june:'',input.residentMode==='manual'&&input.monthlyResidentMode!=='none'?P.residentInstallments(input.residentAnnual,input.residentCollectionMode).monthly:'',dependentText(input.dependents),P.withholdingCount(P.atAnnual(input,c.gross)),dependentText(P.previousFamily(input)),c.current.national.dependentDeduction,P.dependentAmounts(input.dependents).resident,c.current.incomeAdjustment,taxSettingsText(input.taxConditions),taxSettingsText(P.previousTaxConditions(input)),c.current.extra.national,c.current.extra.resident,c.current.national.appliedCredit,c.current.resident.wardCredit??'',c.current.resident.metroCredit??'',c.current.resident.wardOneStopCredit??'',c.current.resident.metroOneStopCredit??'',el('payType').selectedOptions[0].textContent,c.current.salaryDeduction,c.changed.salaryDeduction]);
     download('\uFEFF'+[header,...rows].map(row=>row.map(v=>'\"'+String(v).replace(/\"/g,'\"\"')+'\"').join(',')).join('\r\n'),'text/csv;charset=utf-8','nenshu-no-kabe-comparison.csv');
   });
   el('copyButton').addEventListener('click',async()=>{
@@ -744,6 +757,7 @@
       '所得税の年間扶養控除：'+yen(a.national.dependentDeduction),'住民税の扶養控除（概算用）：'+yen(P.dependentAmounts(input.dependents).resident),'所得金額調整控除：'+yen(a.incomeAdjustment),
       '追加控除の条件（2026年）：'+taxSettingsText(input.taxConditions),'追加控除の条件（2025年）：'+taxSettingsText(P.previousTaxConditions(input)),
       '追加所得控除：'+taxAmountsText(a.extra,'national'),'所得税の適用税額控除：'+yen(a.national.appliedCredit),
+      '給与所得控除：'+yen(a.salaryDeduction)+' → '+yen(b.salaryDeduction),
       '所得税の基礎控除：'+yen(a.national.basic)+' → '+yen(b.national.basic),
       '基礎控除の設定：'+(policy.basicMode==='current'?'2026年分の現行制度':policy.basicMode==='add'?'全所得帯で '+signed(policy.basicAmount)+' 加減算':'全所得帯で '+yen(policy.basicAmount)+' に固定'),
       '年間社会保険料：'+yen(a.social.annual),'年間所得税等：'+yen(a.national.annual),'年間住民税等：'+yen(a.resident.annual),

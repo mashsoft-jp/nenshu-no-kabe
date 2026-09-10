@@ -9,7 +9,7 @@ with sync_playwright() as p:
         page=browser.new_page(viewport={'width':width,'height':1000},accept_downloads=True)
         errors=[];requests=[]
         page.on('pageerror',lambda e:errors.append(str(e)));page.on('request',lambda r:requests.append(r.url))
-        page.set_content((ROOT/'index.html').read_text());page.locator('#setupAll').click()
+        page.set_content((ROOT/'index.html').read_text());page.locator('#setupAll').click();page.locator('#breakdownItems').evaluate('(e)=>e.open=true')
         expect(page.locator('#simBasicMode')).to_be_hidden()
         monthly=page.locator('#monthlyNet').inner_text();current=page.locator('#simCurrentNet').inner_text()
         page.locator('#simEditorSummary').click()

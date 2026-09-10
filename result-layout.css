@@ -1,0 +1,19 @@
+/* 結果を読みながら比較できる月・年サマリー。 */
+.sim-layout{display:block}
+.sim-sidebar{margin-bottom:20px}
+#salaryConditions>summary{font-size:16px;color:var(--text)}
+#salaryConditions[open]>summary{margin-bottom:20px}
+body.setup-active #salaryConditions>summary{display:none}
+body.setup-active .result-sticky{display:none}
+.result-sticky{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;background:#fffffff5;border:1px solid #8ebdd1;border-top:3px solid var(--brand-blue);border-radius:0 0 12px 12px;box-shadow:0 6px 20px #24475b18;padding:10px 20px;margin-bottom:20px;backdrop-filter:blur(12px)}
+.result-sticky span,.result-sticky small{display:block;font-size:11px;color:var(--muted)}
+.result-sticky strong{font-size:28px;color:var(--net);line-height:1.4}
+#breakdownItems{margin-top:18px}#breakdownItems>summary{font-size:13px}#breakdownItems[open]>summary{margin-bottom:14px}
+.deduction-sliders{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.deduction-sliders output{display:block;color:var(--net);font-size:24px;font-weight:700}
+.deduction-sliders input[type=range]{margin:16px 0}
+html{scroll-padding-top:125px}
+#simResults,#simEditor{scroll-margin-top:125px}
+.sim-footer{padding-bottom:0!important}
+@media(max-width:620px){.result-sticky{padding:8px 10px;gap:10px}.result-sticky strong{font-size:clamp(16px,5vw,23px)}.result-sticky span,.result-sticky small{font-size:10px}.deduction-sliders{grid-template-columns:1fr}.sim-layout{display:block}}
+@media print{.result-sticky{display:none}#salaryConditions{display:none}}

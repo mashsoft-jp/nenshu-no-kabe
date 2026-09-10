@@ -19,7 +19,7 @@
     {upper:null, rateBp:4500}
   ].map(Object.freeze));
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
-  function currentPolicy() { return {brackets:clone(CURRENT), basicMode:'current', basicAmount:0}; }
+  function currentPolicy() { return {brackets:clone(CURRENT), basicMode:'current', basicAmount:0, salaryMode:'current', salaryAmount:0}; }
   function defaultInput() {
     return {annualGross:6000000, age:30, prefecture:'東京都', employment:50,
       socialMode:'auto', socialAnnual:881400, residentMode:'estimate', residentAnnual:307200};
@@ -48,6 +48,10 @@
     });
     if (!['current','add','flat'].includes(p.basicMode)) throw new Error('基礎控除の設定方法が不正です。');
     int(p.basicAmount, p.basicMode === 'add' ? -10000000 : 0, 10000000, '基礎控除の設定額（円）');
+    if(p.salaryMode!==undefined||p.salaryAmount!==undefined){
+      if(!['current','flat'].includes(p.salaryMode))throw new Error('給与所得控除の設定方法が不正です。');
+      int(p.salaryAmount,0,10000000,'給与所得控除額（円）');
+    }
     return p;
   }
   function validateInput(x) {
@@ -144,10 +148,11 @@
   }
   function calculate(x, policy=currentPolicy()) {
     validateInput(x); validatePolicy(policy);
-    const income = salaryIncome(x.annualGross);
+    const currentIncome = salaryIncome(x.annualGross);
+    const income = policy.salaryMode==='flat'?Math.max(0,x.annualGross-policy.salaryAmount):currentIncome;
     const social = socialContributions(x);
     const national = incomeTax(income,social.annual,policy);
-    const resident = x.residentMode === 'manual' ? {annual:x.residentAnnual,manual:true} : residentTax(income,social.annual);
+    const resident = x.residentMode === 'manual' ? {annual:x.residentAnnual,manual:true} : residentTax(currentIncome,social.annual);
     const deductions = social.annual+national.annual+resident.annual;
     return {gross:x.annualGross, income, salaryDeduction:x.annualGross-income, social,
       national, resident, deductions, net:x.annualGross-deductions};

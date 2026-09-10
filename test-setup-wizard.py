@@ -79,7 +79,7 @@ with sync_playwright() as p:
         expected=page.evaluate('(doc)=>Nenshu.calculate(doc.input,doc.policy).monthly.net',saved)
         expect(page.locator('#monthlyNet')).to_have_text(f'{expected:,}円')
         assert page.locator('#setupLaunch').evaluate('(el)=>el.tabIndex')==0
-        page.locator('#setupLaunch').click()
+        page.locator('#salaryConditions').evaluate('(e)=>e.open=true');page.locator('#setupLaunch').click()
         expect(page.locator('#monthlyGross')).to_have_value('330000')
         # Import while in the wizard updates the same controls and preserves the flow.
         page.locator('#simFile').set_input_files({'name':'settings.json','mimeType':'application/json','buffer':json.dumps(saved).encode()})
@@ -97,7 +97,7 @@ with sync_playwright() as p:
         expect(page.locator('#standardMode')).to_have_value('auto')
         page.locator('#setupNext').click()
         expect(page.locator('#standardMode')).to_be_hidden()
-        page.locator('#setupAll').click()
+        page.locator('#setupAll').click();page.locator('#breakdownItems').evaluate('(e)=>e.open=true')
         expect(page.locator('#simResults')).to_be_visible()
         assert not errors,errors
         assert not requests,requests

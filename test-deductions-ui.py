@@ -27,7 +27,7 @@ with sync_playwright() as p:
         errors=[];requests=[]
         page.on('pageerror',lambda e:errors.append(str(e)));page.on('request',lambda r:requests.append(r.url))
         page.set_content((ROOT/'index.html').read_text())
-        page.locator('#setupAll').click()
+        page.locator('#setupAll').click();page.locator('#breakdownItems').evaluate('(e)=>e.open=true')
         initial=save(page)
         page.locator('#taxConditions>summary').focus();page.keyboard.press('Enter')
         page.locator('#taxFields .tax-group>summary').nth(0).click()
@@ -62,7 +62,7 @@ with sync_playwright() as p:
         expect(page.locator('#simTaxFooter')).to_contain_text('47,900円')
         page.locator('#tax_metroOneStopCredit').fill('500')
         expect(page.locator('#annual-detail-residentTax')).to_contain_text('ワンストップ申告特例分（区／都）：0円／500円')
-        saved=save(page);check(saved['version']==7,'v5 saved');check(saved['input']['taxConditions']['smallEnterprise']==240000,'amount saved')
+        saved=save(page);check(saved['version']==8,'v5 saved');check(saved['input']['taxConditions']['smallEnterprise']==240000,'amount saved')
         page.locator('#tax_smallEnterprise').fill('0');load(page,saved)
         expect(page.locator('#tax_smallEnterprise')).to_have_value('240000')
         expect(page.locator('#annual-button-incomeTax')).to_have_attribute('aria-expanded','true')

@@ -26,10 +26,10 @@ with sync_playwright() as p:
         expect(page.locator('#simEmployment')).to_have_value('60')
         page.locator('#setupBack').click()
         page.locator('#payType').select_option('officer')
-        page.locator('#setupAll').click()
+        page.locator('#setupAll').click();page.locator('#breakdownItems').evaluate('(e)=>e.open=true')
         with page.expect_download() as dl:page.locator('#simSave').click()
         doc=json.loads(Path(dl.value.path()).read_text())
-        assert doc['version']==7 and doc['input']['payType']=='officer' and doc['input']['employment']==0
+        assert doc['version']==8 and doc['input']['payType']=='officer' and doc['input']['employment']==0
         page.locator('#payType').select_option('employee')
         page.locator('#simFile').set_input_files({'name':'synthetic.json','mimeType':'application/json','buffer':json.dumps(doc).encode()})
         expect(page.locator('#payType')).to_have_value('officer')

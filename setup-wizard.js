@@ -41,10 +41,10 @@ window.initSetupWizard = function ({validate}) {
     el('setupNext').textContent=step===4?'手取りを表示':'次へ';el('setupError').hidden=true;
     if(step===4)summary();if(focus){el('setupTitle').focus();nav.scrollIntoView({block:'start'});}
   }
-  function enter(){active=true;step=0;document.body.classList.add('setup-active');nav.hidden=false;launch.hidden=true;
+  function enter(){el('salaryConditions').open=true;active=true;step=0;document.body.classList.add('setup-active');nav.hidden=false;launch.hidden=true;
     placements.forEach(({node,index})=>panels[index].append(node));standardOptions.append(el('standardMode').closest('.sim-field'),el('standardManualWrap'));panels[1].append(standardOptions);standardOptions.open=el('standardMode').value==='manual';show(false);
   }
-  function leave(result=false){active=false;placements.forEach(({node,marker})=>marker.after(node));nav.hidden=true;launch.hidden=false;document.body.classList.remove('setup-active');
+  function leave(result=false){el('salaryConditions').open=!result;active=false;placements.forEach(({node,marker})=>marker.after(node));nav.hidden=true;launch.hidden=false;document.body.classList.remove('setup-active');
     window.dispatchEvent(new Event('resize'));
     const target=result?document.querySelector('#simResults h2'):launch;if(result)target.tabIndex=-1;target.focus();target.scrollIntoView({block:'start'});
   }

@@ -148,3 +148,36 @@ equal(U.incomeTax(950000,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:95
 equal(U.incomeTax(950999,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000}).annual,0,'taxable thousand-yen floor');
 equal(U.incomeTax(951000,0,{...U.currentPolicy(),basicMode:'flat',basicAmount:950000}).annual,0,'50 yen + 1 yen surtax; final 100-yen floor');
 console.log('PASS direct basic deduction hand calculations and boundaries');
+
+// Flat salary deduction: hand-calculated 4.8m salary, no annual social/resident burden.
+{
+ const x=input({monthlyGross:400000,socialMode:'manual',socialAnnual:0,residentMode:'manual',residentAnnual:0});
+ const p={...U.currentPolicy(),salaryMode:'flat',salaryAmount:1500000};
+ const c=U.compare(x,p);
+ equal(c.current.salaryDeduction,1400000,'current salary deduction retained');
+ equal(c.changed.income,3300000,'4.8m minus flat 1.5m');
+ equal(c.changed.national.annual,131100,'2.26m taxable: 128500 tax +2698 reconstruction, final hundred floor');
+ equal(c.delta,10300,'annual hand calculation');
+ equal(c.changed.monthly,c.current.monthly,'ordinary payroll is unchanged');
+ for(const gross of [960000,4800000,12000000]){
+  const y=input({monthlyGross:gross/12,socialMode:'manual',socialAnnual:0});
+  const z=U.compare(y,p);equal(z.changed.salaryDeduction,Math.min(gross,1500000),'fixed across income bands, capped by revenue');
+  equal(z.changed.resident,z.current.resident,'resident tax remains current');
+ }
+ for(const amount of [0,4799999,4800000,10000000]){
+  const r=U.calculate(x,{...p,salaryAmount:amount});equal(r.salaryDeduction,Math.min(amount,4800000),'deduction cap exact yen');check(r.income>=0,'income nonnegative');
+ }
+ const doc={format:'nenshu-no-kabe',version:8,input:x,policy:p,graphMax:12000000};
+ equal(U.validateDocument(doc).policy,p,'v8 roundtrip');
+ for(const v of [2,3,4,5,6,7]){const old=U.validateDocument({...doc,version:v});equal(old.policy.salaryMode,'current','old files cannot inject flat deduction');equal(old.policy.salaryAmount,0,'old amounts reset');}
+ for(const patch of [{salaryMode:'unknown'},{salaryAmount:-1},{salaryAmount:10000001},{salaryAmount:1.5},{salaryAmount:null}])assert.throws(()=>U.validateDocument({...doc,policy:{...p,...patch}}));
+ const missing=U.clone(p);delete missing.salaryMode;assert.throws(()=>U.validateDocument({...doc,policy:missing}));
+}
+console.log('PASS flat salary deduction, independent amounts, caps, resident/payroll fixed, JSON v8');
+{
+ const x=input({monthlyGross:400000}),p={...U.currentPolicy(),salaryMode:'flat',salaryAmount:0};
+ const samples=U.sampleForInput(x,12000000,220,p).map(v=>v.annualGross);
+ check(samples.includes(4890000)&&samples.includes(4890012),'flat salary deduction moves basic-deduction cliff to sampled 4.89m boundary');
+ const r=U.calculate(input({monthlyGross:1000000,dependents:{...U.emptyDependents(),young:1}}),{...p,salaryAmount:10000000});
+ check(r.income>=0&&r.incomeAdjustment<=r.taxableGross-r.salaryDeduction,'income adjustment cannot exceed remaining salary income');
+}

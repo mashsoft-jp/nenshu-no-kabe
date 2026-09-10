@@ -61,11 +61,11 @@ for(const key of ['dependents','previousDependents','previousDependentMode','wit
 for(const version of [2,3]){
  const old=JSON.parse(JSON.stringify(doc));old.version=version;
  // Even injected new fields in an old document cannot change the old no-dependent model.
- const migrated=U.validateDocument(old);eq(migrated.version,7,'upgrade');eq(migrated.dependentLegacy,true,'migration notice');
+ const migrated=U.validateDocument(old);eq(migrated.version,8,'upgrade');eq(migrated.dependentLegacy,true,'migration notice');
  eq(migrated.input.dependents,family({}),'old family is zero');
  eq(U.calculate(migrated.input).net,U.calculate({...x,dependents:family({})}).net,'old results preserved');
 }
-for(const version of [0,8,'5'])bad(()=>U.validateDocument({...doc,version}));
+for(const version of [0,9,'5'])bad(()=>U.validateDocument({...doc,version}));
 // Dependent deductions must not lower the income used to choose a basic deduction.
 eq(U.incomeTax(4890001,0,U.currentPolicy(),380000).basic,670000,'basic deduction phaseout is before dependent deduction');
 // Personal deduction difference is fixed, not the enlarged 2026 national basic deduction.

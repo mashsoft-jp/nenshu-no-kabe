@@ -207,12 +207,14 @@
   function calculate(x,policy=Base.currentPolicy()){
     validateInput(x);Base.validatePolicy(policy);
     const auto=automaticSocial(x),social=x.socialMode==='manual'?{manual:true,annual:x.socialAnnual,parts:null,automatic:auto}:auto;
-    const taxableGross=x.annualGross-x.nonTax*12,salaryDeduction=taxableGross-Base.salaryIncome(taxableGross);
-    const incomeAdjustment=salaryAdjustment(taxableGross,x.dependents,x.taxConditions),income=Base.salaryIncome(taxableGross)-incomeAdjustment;
+    const taxableGross=x.annualGross-x.nonTax*12,currentIncome=Base.salaryIncome(taxableGross);
+    const salaryDeduction=policy.salaryMode==='flat'?Math.min(taxableGross,policy.salaryAmount):taxableGross-currentIncome;
+    const currentAdjustment=salaryAdjustment(taxableGross,x.dependents,x.taxConditions);
+    const incomeAdjustment=Math.min(currentAdjustment,taxableGross-salaryDeduction),income=taxableGross-salaryDeduction-incomeAdjustment;
     const dependentDeduction=dependentAmounts(x.dependents).national;
     const extra=Deductions.amounts(x.taxConditions,income);
     const national=Base.incomeTax(income,social.annual,policy,dependentDeduction,extra.national,extra.nationalCredit);
-    const resident=x.residentMode==='manual'?{annual:x.residentAnnual,manual:true}:familyResidentTax(income,social.annual,x.dependents,x.taxConditions);
+    const resident=x.residentMode==='manual'?{annual:x.residentAnnual,manual:true}:familyResidentTax(currentIncome-currentAdjustment,social.annual,x.dependents,x.taxConditions);
     const other=x.other*12,deductions=social.annual+national.annual+resident.annual+other;
     return {gross:x.annualGross,taxableGross,extra,nonTax:x.nonTax*12,income,salaryDeduction,incomeAdjustment,
       bonusGross:bonusTotal(x),social,automaticSocial:auto,national,resident,other,deductions,
@@ -224,7 +226,7 @@
     const b=bonusTotal(x),monthlyGross=Math.max(Math.max(MIN_MONTHLY,x.nonTax),Math.min(MAX_MONTHLY,Math.floor((Math.min(Base.MAX_GROSS,gross)-b)/12)));
     return {...x,monthlyGross,annualGross:monthlyGross*12+b};
   }
-  function sampleForInput(x,max,count=220){
+  function sampleForInput(x,max,count=220,policy=Base.currentPolicy()){
     const min=graphMinimum(x);
     if(max<=min)return [atAnnual(x,min)];
     const bonus=bonusTotal(x);
@@ -232,12 +234,19 @@
     const t=x.taxConditions,cliffs=[];
     const incomeLimits=[...(t.spouseEligible?[9000000,9500000,10000000]:[]),...(t.parent!=='none'?[1350000,5000000]:[]),...(t.selfDisability!=='none'?[1350000]:[]),...(t.student?[890000]:[])];
     const adjusted=dependentAmounts(x.dependents).under23>0||Deductions.adjustmentEligible(t,2026);
-    if(adjusted)incomeLimits.push(4890000,6550000,23500000,24000000,24500000,25000000);
+    if(adjusted||policy.salaryMode==='flat')incomeLimits.push(4890000,6550000,23500000,24000000,24500000,25000000);
     // Locate the first attainable monthly salary ABOVE each income ceiling, keeping bonuses fixed.
     for(const limit of incomeLimits){
       let lo=Math.max(MIN_MONTHLY,x.nonTax),hi=Math.min(MAX_MONTHLY,Math.floor((max-bonus)/12));
       while(lo<hi){const mid=Math.floor((lo+hi)/2),gross=mid*12+bonus-x.nonTax*12;
         if(Base.salaryIncome(gross)-salaryAdjustment(gross,x.dependents,t)>limit)hi=mid;else lo=mid+1;}
+      for(const delta of [-12,0,12])cliffs.push(lo*12+bonus+delta);
+    }
+    if(policy.salaryMode==='flat')for(const limit of incomeLimits){
+      let lo=Math.max(MIN_MONTHLY,x.nonTax),hi=Math.min(MAX_MONTHLY,Math.floor((max-bonus)/12));
+      while(lo<hi){const mid=Math.floor((lo+hi)/2),gross=mid*12+bonus-x.nonTax*12;
+        const income=Math.max(0,gross-policy.salaryAmount-salaryAdjustment(gross,x.dependents,t));
+        if(income>limit)hi=mid;else lo=mid+1;}
       for(const delta of [-12,0,12])cliffs.push(lo*12+bonus+delta);
     }
     const targets=Base.sampleSalaries(min,max,count,[x.annualGross,...shifted,...cliffs]);
@@ -249,7 +258,7 @@
     if(doc?.format==='tedori-policy'&&doc.version===1){
       const d=Base.validateDocument(doc);x={...defaultInput(),...d.input,monthlyGross:Math.floor(d.input.annualGross/12),bonuses:[]};
       x.annualGross=annualGross(x);legacy=true;
-    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5,6,7].includes(doc.version)){
+    } else if(doc?.format==='nenshu-no-kabe'&&[2,3,4,5,6,7,8].includes(doc.version)){
       x=Base.clone(doc.input);
       if(doc.version===2){
         // Preserve old annual/monthly independence, rather than changing saved results.
@@ -266,8 +275,11 @@
     if(doc.version<6&&x.monthlyResidentMode==='none')throw new Error('旧設定の住民税月額モードが不正です。');
     if(doc.version<7)x.payType=x.employment===0?'custom':'employee';
     else if(!['employee','officer','custom'].includes(x.payType))throw new Error('報酬の区分を含む設定JSONを選んでください。');
-    validateInput(x);Base.validatePolicy(doc.policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
-    return {format:'nenshu-no-kabe',version:7,input:x,policy:Base.clone(doc.policy),graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
+    const policy=Base.clone(doc.policy);
+    if(doc.version<8){policy.salaryMode='current';policy.salaryAmount=0;}
+    else if(policy.salaryMode===undefined||policy.salaryAmount===undefined)throw new Error('給与所得控除の設定がありません。');
+    validateInput(x);Base.validatePolicy(policy);integer(doc.graphMax,3000000,Base.MAX_GROSS,'グラフ上限');
+    return {format:'nenshu-no-kabe',version:8,input:x,policy,graphMax:Math.max(doc.graphMax,x.annualGross),legacy,residentLegacy,dependentLegacy,deductionLegacy};
   }
   return {...Base,MAX_MONTHLY,MIN_MONTHLY,defaultInput,validateInput,bonusTotal,annualGross,
     Deductions,previousTaxConditions,salaryIncome2025,dependentKeys,emptyDependents,dependentAmounts,withholdingCount,previousFamily,salaryAdjustment,familyResidentTax,
