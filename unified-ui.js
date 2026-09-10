@@ -206,6 +206,7 @@
     el('monthlyPayHeading').textContent=linked?'通常月（7月〜翌5月）':'通常月';
     el('residentJunePay').hidden=!linked;
     if(linked)el('residentJuneNet').textContent=yen(m.net+m.residentTax-m.residentDetail.june);
+    el('socialModelNote').textContent='通常月の健康保険・介護保険は協会けんぽ（'+input.prefecture+'支部）の料率で計算しています。健保組合などに加入している場合、料率・本人負担割合が異なるため、実際の控除額とは一致しないことがあります。'+(input.standardMode==='auto'?'標準報酬月額は入力した月給からの概算で、実際の決定額とは異なる場合があります。':'標準報酬月額は指定した決定済みの等級を使用しています。')+(input.socialMode==='manual'?'年間の社会保険料には入力した年額を使用しています。':'');
     el('residentSummaryNote').textContent='年間は2026年分の所得税・9月の社会保険料率と、'+
       (input.residentMode==='manual'?'通知書などの対象年度の住民税年額を使用します。翌年度の住民税予測ではありません。':'2027年度の住民税予測額を使用します。')+
       '実際の年間振込総額ではありません。';
@@ -733,7 +734,7 @@
       '通常月の住民税：'+yen(a.monthly.residentTax)+'（'+monthlyResidentLabel()+'）',
       ...(a.monthly.residentDetail?.notice?['6月の住民税：'+yen(a.monthly.residentDetail.june),'6月の手取り（住民税差のみ）：'+yen(a.monthly.net+a.monthly.residentTax-a.monthly.residentDetail.june)]:[]),
       '年間の手取り：'+yen(a.net),'月平均：'+yen(a.net/12)+'（年間手取り÷12）',
-      '加入支部：'+input.prefecture+'／年齢：'+input.age+'歳',
+      '協会けんぽの計算支部：'+input.prefecture+'／年齢：'+input.age+'歳',
       '扶養（2026年）：'+dependentText(input.dependents),'通常月の源泉徴収人数：'+P.withholdingCount(input)+'人','扶養（2025年）：'+dependentText(P.previousFamily(input)),
       '所得税の年間扶養控除：'+yen(a.national.dependentDeduction),'住民税の扶養控除（概算用）：'+yen(P.dependentAmounts(input.dependents).resident),'所得金額調整控除：'+yen(a.incomeAdjustment),
       '追加控除の条件（2026年）：'+taxSettingsText(input.taxConditions),'追加控除の条件（2025年）：'+taxSettingsText(P.previousTaxConditions(input)),

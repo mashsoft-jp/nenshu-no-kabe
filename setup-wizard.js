@@ -14,8 +14,12 @@ window.initSetupWizard = function ({validate}) {
   remember(form.querySelector('.bonus-section'),0);remember(form.querySelector('.gross-total-box'),0);
   remember(el('nonTax').closest('.sim-field'),0);remember(el('otherDeduction').closest('.sim-field'),0);
   remember(el('simAge').closest('.sim-fields-two'),1);
-  ['simEmployment','standardMode','simSocialMode'].forEach(id=>remember(el(id).closest('.sim-field'),1));
-  ['standardManualWrap','simSocialManualWrap'].forEach(id=>remember(el(id),1));
+  ['simEmployment','simSocialMode'].forEach(id=>remember(el(id).closest('.sim-field'),1));
+  ['simSocialManualWrap'].forEach(id=>remember(el(id),1));
+  const standardOptions=document.createElement('details');standardOptions.id='setupStandardOptions';standardOptions.className='sim-conditions';
+  standardOptions.innerHTML='<summary>標準報酬月額を指定する（決定済みの場合）</summary><p class="sim-hint">通常は入力した月給から自動で概算します。実際の標準報酬月額は4〜6月の報酬などをもとに決まるため、決定通知書等で確認できる場合だけ指定してください。</p>';
+  panels[1].append(standardOptions);
+  remember(el('standardMode').closest('.sim-field'),1);remember(el('standardManualWrap'),1);
   ['dependentConditions','taxConditions'].forEach(id=>remember(el(id),2));
   // Withholding choice comes before the annual notice input, including separate payment.
   remember(el('monthlyResidentMode').closest('.sim-field'),3);
@@ -26,7 +30,7 @@ window.initSetupWizard = function ({validate}) {
     panels[4].replaceChildren();
     const list=document.createElement('dl');list.className='setup-review';
     const value=id=>{const c=el(id);return c.tagName==='SELECT'?c.selectedOptions[0]?.textContent:c.value;};
-    const rows=[['報酬の区分',value('payType')],['月給（額面）',Number(value('monthlyGross')).toLocaleString('ja-JP')+'円'],['賞与',el('bonusRows').children.length+'件'],['額面年収',el('derivedAnnualGross').textContent],['加入支部',value('simPrefecture')],['年齢',value('simAge')+'歳'],['雇用保険',value('simEmployment')],['標準報酬月額',value('standardMode')],['扶養親族',el('dependentSummary').textContent],['配偶者控除の資格',value('tax_spouseEligible')],['通常月の住民税',value('monthlyResidentMode')],['年間の住民税',value('simResidentMode')]];
+    const rows=[['報酬の区分',value('payType')],['月給（額面）',Number(value('monthlyGross')).toLocaleString('ja-JP')+'円'],['賞与',el('bonusRows').children.length+'件'],['額面年収',el('derivedAnnualGross').textContent],['勤務先の所在地',value('simPrefecture')],['年齢',value('simAge')+'歳'],['雇用保険',value('simEmployment')],['標準報酬月額',value('standardMode')],['扶養親族',el('dependentSummary').textContent],['配偶者控除の資格',value('tax_spouseEligible')],['通常月の住民税',value('monthlyResidentMode')],['年間の住民税',value('simResidentMode')]];
     if(value('simResidentAnnual')&&el('simResidentMode').value==='manual')rows.push(['住民税の年額',Number(value('simResidentAnnual')).toLocaleString('ja-JP')+'円']);
     rows.forEach(([label,text])=>{const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=text;row.append(dt,dd);list.append(row);});panels[4].append(list);
     const note=document.createElement('p');note.className='sim-hint';note.textContent='その他の控除・詳細条件も入力した値を使います。入力は自動保存されません。設定を残すには「設定を保存」を使ってください。';panels[4].append(note);
@@ -38,7 +42,7 @@ window.initSetupWizard = function ({validate}) {
     if(step===4)summary();if(focus){el('setupTitle').focus();nav.scrollIntoView({block:'start'});}
   }
   function enter(){active=true;step=0;document.body.classList.add('setup-active');nav.hidden=false;launch.hidden=true;
-    placements.forEach(({node,index})=>panels[index].append(node));show(false);
+    placements.forEach(({node,index})=>panels[index].append(node));standardOptions.append(el('standardMode').closest('.sim-field'),el('standardManualWrap'));panels[1].append(standardOptions);standardOptions.open=el('standardMode').value==='manual';show(false);
   }
   function leave(result=false){active=false;placements.forEach(({node,marker})=>marker.after(node));nav.hidden=true;launch.hidden=false;document.body.classList.remove('setup-active');
     window.dispatchEvent(new Event('resize'));
