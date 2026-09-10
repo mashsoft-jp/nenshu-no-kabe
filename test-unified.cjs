@@ -115,3 +115,20 @@ for(const residentMode of ['manual','estimate']) {
  equal(U.validateDocument({...doc6,version:5,input:withTax}).input,withTax,'v5 preserves monthly setting');
 }
 console.log('PASS no resident withholding, annual independence, JSON migration and validation');
+
+// Pay type: officer report excludes employment contributions on salary and bonus.
+const officerInput=input({payType:'officer',employment:0,monthlyGross:300000,bonuses:[{month:6,gross:100000}]});
+const officerResult=U.calculate(officerInput);
+equal(officerResult.monthly.employment,0,'officer monthly employment zero');
+equal(officerResult.social.bonusParts.employment,0,'officer bonus employment zero');
+assert.throws(()=>U.calculate({...officerInput,employment:50}));
+assert.throws(()=>U.calculate({...officerInput,payType:'unknown'}));
+const payDoc={format:'nenshu-no-kabe',version:7,input:officerInput,policy:U.currentPolicy(),graphMax:12000000};
+equal(U.validateDocument(payDoc).input,officerInput,'pay type JSON roundtrip');
+assert.throws(()=>U.validateDocument({...payDoc,input:{...officerInput,payType:undefined}}));
+for(const employment of [0,50,60]){
+ const migrated=U.validateDocument({...payDoc,version:6,input:{...officerInput,employment}});
+ equal(migrated.input.employment,employment,'old JSON preserves employment rate');
+ equal(migrated.input.payType,employment===0?'custom':'employee','old rate does not invent officer status');
+}
+console.log('PASS pay type, salary/bonus insurance, JSON migration and invalid settings');

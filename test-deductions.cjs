@@ -71,7 +71,7 @@ for(const key of ['spouseEligible','spouseElderly','student','adjustmentOther'])
 for(const v of [{spouseEligible:true,parent:'mother'},{disabledGeneral:1},{specialIncomes:[620000]},{specialIncomes:[1230001]},{specialIncomes:'900000'},{parent:'father'}])bad(()=>U.calculate(input({taxConditions:t(v)})));
 const doc={format:'nenshu-no-kabe',version:5,input:x,policy:U.currentPolicy(),graphMax:12000000};eq(U.validateDocument(doc).input,x,'v5 roundtrip');
 for(const key of Object.keys(D.defaults())){const d=U.clone(doc);delete d.input.taxConditions[key];bad(()=>U.validateDocument(d));}
-for(const oldVersion of [2,3,4]){const old=U.clone(doc);old.version=oldVersion;old.input.taxConditions=t({nationalCredit:999999});const migrated=U.validateDocument(old);eq(migrated.version,6,'version upgraded');eq(migrated.input.taxConditions,D.defaults(),'old versions cannot inject new deductions');eq(migrated.deductionLegacy,true,'migration notified');}
+for(const oldVersion of [2,3,4]){const old=U.clone(doc);old.version=oldVersion;old.input.taxConditions=t({nationalCredit:999999});const migrated=U.validateDocument(old);eq(migrated.version,7,'version upgraded');eq(migrated.input.taxConditions,D.defaults(),'old versions cannot inject new deductions');eq(migrated.deductionLegacy,true,'migration notified');}
 for(const income of [0,450000,450001,450999,451000,1000000,25000001])eq(U.familyResidentTax(income,0,family({})).annual,U.residentTax(income,0).annual,'zero conditions retain old edge results');
 // Near exemption: before credits ward18,600 / metro12,400; excess income500.
 // Removing ward alone leaves metro to absorb the entire relief (not a fixed 40% share).
