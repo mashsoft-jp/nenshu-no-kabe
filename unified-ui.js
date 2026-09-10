@@ -521,7 +521,7 @@
     if(xMax<=xMin)xMin=xMax-12;
     const sx=x=>left+(x-xMin)/(xMax-xMin)*(x1-left),sy=y=>y1-(y-yMin)/(yMax-yMin)*(y1-top);
     chartGeometry={W,H,left,top,x1,y1,xMin,xMax,yMin,yMax,sx,sy};
-    const labelColor='#9aaac0',gridColor='#2b394c';
+    const labelColor='var(--muted)',gridColor='var(--line)';
     svg.append(svgNode('text',{x:left,y:13,fill:labelColor,'font-size':10},graphMode==='rates'?'所得税率（%）':graphMode==='delta'?'手取りの差（万円）':'手取り（万円）'));
     for(let value=yMin;value<=yMax+yStep*.001;value+=yStep){
       const py=sy(value);svg.append(svgNode('line',{x1:left,y1:py,x2:x1,y2:py,stroke:gridColor,'stroke-width':1}));
@@ -541,10 +541,10 @@
     if(graphMode==='rates') {
       function stepPoints(bs) {let lo=0,points=[];for(const b of bs){if(lo>xMax)break;const hi=b.upper===null?xMax:Math.min(b.upper,xMax);points.push([lo,b.rateBp/100],[hi,b.rateBp/100]);lo=hi;if(hi===xMax)break;}return points;}
       const custom=stepPoints(policy.brackets),current=stepPoints(P.CURRENT);
-      svg.append(svgNode('path',{d:linePath(current),fill:'none',stroke:'#88aafa','stroke-width':2,'stroke-dasharray':'6 5'}));
-      svg.append(svgNode('path',{d:linePath(custom),fill:'none',stroke:'#5fe0ba','stroke-width':2.5}));
+      svg.append(svgNode('path',{d:linePath(current),fill:'none',stroke:'var(--sim-current)','stroke-width':2,'stroke-dasharray':'6 5'}));
+      svg.append(svgNode('path',{d:linePath(custom),fill:'none',stroke:'var(--sim-accent)','stroke-width':2.5}));
       policy.brackets.forEach((b,i)=>{if(b.upper!==null&&b.upper<=xMax){
-        const point=svgNode('circle',{cx:sx(b.upper),cy:sy(b.rateBp/100),r:6,fill:'#142820',stroke:'#5fe0ba','stroke-width':2,class:'sim-handle','data-bound':i});
+        const point=svgNode('circle',{cx:sx(b.upper),cy:sy(b.rateBp/100),r:6,fill:'var(--panel)',stroke:'var(--sim-accent)','stroke-width':2,class:'sim-handle','data-bound':i});
         point.append(svgNode('title',{},'第'+(i+1)+'段階の上限 '+man(b.upper)+'。左右にドラッグして変更。'));
         svg.append(point);
       }});
@@ -552,25 +552,25 @@
       svg.setAttribute('aria-label','課税所得別の所得税率。境目は編集欄または緑の丸で変更できます。');
     } else if(graphMode==='net') {
       const a=data.map(c=>[c.gross,c.current.net]),b=data.map(c=>[c.gross,c.changed.net]);
-      svg.append(svgNode('path',{d:linePath(b)+linePath([...a].reverse()).replace(/^M/,'L')+'Z',fill:'#5fe0ba','fill-opacity':.09,stroke:'none'}));
-      svg.append(svgNode('path',{d:linePath(a),fill:'none',stroke:'#88aafa','stroke-width':2,'stroke-dasharray':'6 5','stroke-linejoin':'round'}));
-      svg.append(svgNode('path',{d:linePath(b),fill:'none',stroke:'#5fe0ba','stroke-width':2.5,'stroke-linejoin':'round'}));
+      svg.append(svgNode('path',{d:linePath(b)+linePath([...a].reverse()).replace(/^M/,'L')+'Z',fill:'var(--sim-accent)','fill-opacity':.09,stroke:'none'}));
+      svg.append(svgNode('path',{d:linePath(a),fill:'none',stroke:'var(--sim-current)','stroke-width':2,'stroke-dasharray':'6 5','stroke-linejoin':'round'}));
+      svg.append(svgNode('path',{d:linePath(b),fill:'none',stroke:'var(--sim-accent)','stroke-width':2.5,'stroke-linejoin':'round'}));
     } else {
       const positive=data.map(c=>[c.gross,Math.max(0,c.delta)]),negative=data.map(c=>[c.gross,Math.min(0,c.delta)]);
       const close=` L${sx(xMax)} ${sy(0)} L${sx(xMin)} ${sy(0)} Z`;
-      svg.append(svgNode('path',{d:linePath(positive)+close,fill:'#5fe0ba','fill-opacity':.12}));
-      svg.append(svgNode('path',{d:linePath(negative)+close,fill:'#ff9bad','fill-opacity':.12}));
-      svg.append(svgNode('line',{x1:left,y1:sy(0),x2:x1,y2:sy(0),stroke:'#88aafa','stroke-width':1.5,'stroke-dasharray':'5 5'}));
-      svg.append(svgNode('path',{d:linePath(positive),fill:'none',stroke:'#5fe0ba','stroke-width':2.3}));
-      svg.append(svgNode('path',{d:linePath(negative),fill:'none',stroke:'#ff9bad','stroke-width':2.3}));
+      svg.append(svgNode('path',{d:linePath(positive)+close,fill:'var(--sim-accent)','fill-opacity':.12}));
+      svg.append(svgNode('path',{d:linePath(negative)+close,fill:'var(--sim-down)','fill-opacity':.12}));
+      svg.append(svgNode('line',{x1:left,y1:sy(0),x2:x1,y2:sy(0),stroke:'var(--sim-current)','stroke-width':1.5,'stroke-dasharray':'5 5'}));
+      svg.append(svgNode('path',{d:linePath(positive),fill:'none',stroke:'var(--sim-accent)','stroke-width':2.3}));
+      svg.append(svgNode('path',{d:linePath(negative),fill:'none',stroke:'var(--sim-down)','stroke-width':2.3}));
     }
     if(graphMode!=='rates') {
       const g=input.annualGross;
       if(g>=xMin&&g<=xMax){
-        svg.append(svgNode('line',{x1:sx(g),y1:top,x2:sx(g),y2:y1,stroke:'#bed2dc','stroke-width':1,'stroke-dasharray':'3 5',opacity:.5}));
-        const vals=graphMode==='net'?[[lastComparison.current.net,'#88aafa'],[lastComparison.changed.net,'#5fe0ba']]:[[lastComparison.delta,lastComparison.delta>=0?'#5fe0ba':'#ff9bad']];
-        vals.forEach(([value,color])=>svg.append(svgNode('circle',{cx:sx(g),cy:sy(value),r:4.5,fill:'#12202b',stroke:color,'stroke-width':2})));
-        svg.append(svgNode('text',{x:Math.min(x1-4,Math.max(left+4,sx(g))),y:top-7,fill:'#dceae7','font-size':11,'text-anchor':sx(g)>x1-45?'end':sx(g)<left+45?'start':'middle'},man(g)));
+        svg.append(svgNode('line',{x1:sx(g),y1:top,x2:sx(g),y2:y1,stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'3 5',opacity:.5}));
+        const vals=graphMode==='net'?[[lastComparison.current.net,'var(--sim-current)'],[lastComparison.changed.net,'var(--sim-accent)']]:[[lastComparison.delta,lastComparison.delta>=0?'var(--sim-accent)':'var(--sim-down)']];
+        vals.forEach(([value,color])=>svg.append(svgNode('circle',{cx:sx(g),cy:sy(value),r:4.5,fill:'var(--panel)',stroke:color,'stroke-width':2})));
+        svg.append(svgNode('text',{x:Math.min(x1-4,Math.max(left+4,sx(g))),y:top-7,fill:'var(--text)','font-size':11,'text-anchor':sx(g)>x1-45?'end':sx(g)<left+45?'start':'middle'},man(g)));
       }
       el('simGraphHint').textContent='賞与を固定し、タップした年収に合わせて月給を変更。左右キーは月給を1,000円ずつ変更。'+(g>xMax?'選択中の年収は表示範囲外です。':'細かな段差も含む概算です。');
       svg.setAttribute('aria-label',graphMode==='net'?'額面年収別の現行制度と仮想制度の手取り比較':'額面年収別の仮想制度による手取り増減額。0円が現行制度。');
@@ -578,7 +578,7 @@
     el('simGraphLegendRight').textContent=graphMode==='rates'?'復興特別所得税を除く':graphMode==='delta'?'0円＝現行制度と同じ':'賞与を固定・月給を変更';
     const legend=document.querySelector('.sim-legend-series');legend.replaceChildren();
     const legendItem=(text,cls)=>{const span=document.createElement('span');span.className='sim-series-label';const line=document.createElement('i');line.className='sim-series-line '+cls;span.append(line,document.createTextNode(text));legend.append(span);return line;};
-    if(graphMode==='delta'){legendItem('増加（＋）','');legendItem('減少（−）','').style.borderTopColor='#ff9bad';}
+    if(graphMode==='delta'){legendItem('増加（＋）','');legendItem('減少（−）','').style.borderTopColor='var(--sim-down)';}
     else{legendItem('現行制度','current');legendItem('仮想制度','');}
   }
   function graphPoint(event) {

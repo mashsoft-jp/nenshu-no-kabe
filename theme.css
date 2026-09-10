@@ -1,0 +1,59 @@
+/* 白と青を基調に、ロゴのシアン・マゼンタを使う配色。 */
+:root{
+  color-scheme:light;
+  --bg:#f3f6f8;--panel:#fff;--panel2:#f0f5f8;--line:#cbd9e1;
+  --text:#213342;--muted:#526776;--net:#006f98;--health:#006f98;
+  --care:#6256ac;--pension:#8554ac;--child:#00818a;--employment:#736091;
+  --income:#a46700;--resident:#c12872;--other:#677888;
+  --sim-accent:#c41579;--sim-current:#006f98;--sim-down:#bc1769;
+  --shadow:0 12px 36px #24475b12;
+  --brand-blue:#0089bd;--brand-pink:#c41579;--pink-soft:#fff0f7;
+}
+body{background:linear-gradient(135deg,#e5f4fa 0,transparent 40%),var(--bg)}
+header{background:#fff;border-bottom:3px solid var(--brand-blue)}
+header .shell{position:relative}
+header .shell::after{content:'';position:absolute;bottom:-3px;left:32px;width:72px;height:3px;background:var(--brand-pink)}
+.sim-hero h1{color:#006b94}
+.sim-card{box-shadow:var(--shadow)}
+.input-card{border-top:4px solid var(--brand-blue)}
+button{background:#fff;border-color:#aebfca}
+button:hover{background:#eaf5fb;border-color:var(--brand-blue)}
+button.primary,#setupNext{background:var(--brand-pink);border-color:var(--brand-pink);color:#fff}
+button.primary:hover,#setupNext:hover{background:#a51065;border-color:#a51065}
+input[type=number],select,.tax-group input[type=text]{background:#fff;border-color:#9eafbc;color:var(--text)}
+.sim-income-input input,.salary-box input{background:#effaff;border-color:#0089bd}
+.badge.green{background:#eaf7fc;border-color:#9acbdf;color:#006c94}
+.badge.amber,.model-note,.notice,.sim-note{background:#fff8e9;border-color:#ddc48d;color:#71551d}
+.notice strong,.sim-note strong{color:#71500a}
+.sim-presets button[aria-pressed=true],.sim-bracket-row.is-selected,.sim-detail-switch button[aria-pressed=true]{background:#eaf7fc;border-color:var(--brand-blue);color:#006b94}
+.gross-total-box,.rate-chart-selection{background:#eaf7fc;border-color:#9bc9dd}
+.sim-summary,.unified-summary{border-color:#8ebdd1}
+.sim-summary-top,.result-top{background:linear-gradient(115deg,#e6f7ff,#fff)}
+.pay-pair{background:linear-gradient(110deg,#eaf8ff,#fff 75%)}
+.pay-box+.pay-box,.pay-components{border-color:#c0dbe7}
+.pay-box h3,.pay-box>p,.sim-summary-caption,.sim-net-monthly,.result-caption{color:#486473}
+.pay-components,.sim-comparison-heading,.sim-compare-values,#simEqualHint,.metrics{background:#f1f7fa}
+.sim-comparison-heading+.sim-compare-values{border-color:var(--line)}
+.sim-tax-options{border-color:#ddacc8}
+.sim-tax-options>summary{color:#9e165f}
+.sim-tax-options[open]>summary{background:var(--pink-soft)}
+.basic-control{background:#fff8fc;border-color:#ddacc8}
+.sim-editor-help{background:#edf7fb;border-color:#bad7e3;color:#365c70}
+.sim-example-buttons button{background:#fff;border-color:#acbfca}
+.sim-selected-editor,.sim-tax-route,.item-detail{background:#f4f8fb}
+.sim-bracket-row{border-bottom-color:var(--line)}
+.sim-bracket-row .sim-no-limit,.sim-empty-state{color:var(--muted)}
+.sim-chart-modes,.tabs{background:#edf3f7}
+.sim-chart-modes button[aria-selected=true],.tabs button[aria-selected=true]{background:#006f98;color:#fff}
+.sim-tooltip{background:#fffffff5;border-color:#a3c1d0;box-shadow:var(--shadow)}
+.sim-table td{border-bottom-color:var(--line)}
+.sim-table .sim-zero td{color:var(--muted)}
+.sim-table .sim-taxband-active td{background:#eaf7fc}
+.sim-proportion,.flow-track{background:#e0eaf0}
+.detail-toggle[aria-expanded=true]{background:#eaf7fc;border-color:#78b3cf;color:#006b94}
+.sim-error{background:#fff0f5;border-color:#cc7a9e;color:#a41b51}
+#setupError{color:#a41b51}
+.toast{background:#fff;color:var(--text);border-color:#91b2c4;box-shadow:var(--shadow)}
+@media(max-width:620px){body.policy-mode .sim-floating-summary{background:#f5fbfff5;border-color:#94bdcf}}
+@media print{body{background:#fff}.sim-card{box-shadow:none}header{border-color:#cbd9e1}}
+noscript{background:#fff0f5;color:#a41b51}
